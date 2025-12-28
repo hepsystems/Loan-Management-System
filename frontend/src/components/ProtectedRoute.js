@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import jwt_decode from 'jwt-decode';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const token = localStorage.getItem('token');
@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   try {
-    const decodedToken = jwtDecode(token);
+    const decodedToken = jwt_decode(token);
     const userRole = decodedToken.role;
     
     // Check if token is expired
