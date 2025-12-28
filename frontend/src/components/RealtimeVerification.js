@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Webcam from 'react-webcam';
 import SignatureCanvas from 'react-signature-canvas';
-import { useGeolocated } from 'react-geolocated';
 import { io } from 'socket.io-client';
 import axios from 'axios';
 
@@ -9,15 +8,12 @@ const RealTimeVerification = ({ applicationId }) => {
   const [verificationStep, setVerificationStep] = useState(1);
   const [socket, setSocket] = useState(null);
   const [verificationStatus, setVerificationStatus] = useState({});
+  const [location, setLocation] = useState(null);
+  const [locationError, setLocationError] = useState('');
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+  
   const webcamRef = useRef(null);
   const signatureRef = useRef(null);
-  
-  const { coords, isGeolocationAvailable, isGeolocationEnabled } = useGeolocated({
-    positionOptions: {
-      enableHighAccuracy: true,
-    },
-    userDecisionTimeout: 5000,
-  });
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -44,14 +40,53 @@ const RealTimeVerification = ({ applicationId }) => {
     };
   }, [applicationId]);
 
+  const getLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setLocationError('');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setLocation({
+          latitude,
+          longitude,
+          accuracy
+        });
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError('User denied the request for Geolocation.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError('Location information is unavailable.');
+            break;
+          case error.TIMEOUT:
+            setLocationError('The request to get user location timed out.');
+            break;
+          default:
+            setLocationError('An unknown error occurred.');
+            break;
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
   const capturePhoto = () => {
     const imageSrc = webcamRef.current.getScreenshot();
-    const location = coords ? {
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      accuracy: coords.accuracy
-    } : null;
-
+    
     socket.emit('capture-photo', {
       applicationId,
       imageData: imageSrc,
@@ -60,12 +95,12 @@ const RealTimeVerification = ({ applicationId }) => {
   };
 
   const verifyLocation = () => {
-    if (coords) {
+    if (location) {
       socket.emit('verify-location', {
         applicationId,
         coordinates: {
-          latitude: coords.latitude,
-          longitude: coords.longitude
+          latitude: location.latitude,
+          longitude: location.longitude
         }
       });
     }
@@ -196,22 +231,46 @@ const RealTimeVerification = ({ applicationId }) => {
       {verificationStep === 2 && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-semibold mb-4">Step 2: Location Verification</h2>
-          {isGeolocationAvailable && isGeolocationEnabled ? (
-            <div>
-              <p className="mb-4">
-                Latitude: {coords?.latitude}<br />
-                Longitude: {coords?.longitude}<br />
-                Accuracy: {coords?.accuracy} meters
-              </p>
+          
+          {locationError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700">{locationError}</p>
+            </div>
+          )}
+
+          {location ? (
+            <div className="mb-6">
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
+                <p className="text-green-700 font-semibold">Location captured successfully!</p>
+                <div className="mt-2 text-sm">
+                  <p>Latitude: {location.latitude}</p>
+                  <p>Longitude: {location.longitude}</p>
+                  <p>Accuracy: {location.accuracy} meters</p>
+                </div>
+              </div>
               <button
                 onClick={verifyLocation}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
               >
                 Verify Location
               </button>
             </div>
           ) : (
-            <p className="text-red-600">Geolocation is not available or enabled.</p>
+            <div>
+              <p className="mb-4 text-gray-600">
+                We need to verify your location. Click the button below to allow location access.
+              </p>
+              <button
+                onClick={getLocation}
+                disabled={isGettingLocation}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGettingLocation ? 'Getting Location...' : 'Get My Location'}
+              </button>
+              <p className="mt-4 text-sm text-gray-500">
+                Note: Location access is required for verification. Please allow location permissions when prompted.
+              </p>
+            </div>
           )}
         </div>
       )}
