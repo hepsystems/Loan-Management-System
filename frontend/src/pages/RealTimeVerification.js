@@ -5,24 +5,28 @@ import Webcam from 'react-webcam';
 import SignatureCanvas from 'react-signature-canvas';
 import Header from '../components/Header';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useSocket } from '../context/SocketContext';
 
 const RealTimeVerification = () => {
   const { applicationId } = useParams();
   const navigate = useNavigate();
   const [verificationStep, setVerificationStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState({
-    photo: false,
-    location: false,
-    witness: false,
-    id: false,
-    mobileMoney: false
-  });
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
   
   const webcamRef = useRef(null);
   const signatureRef = useRef(null);
+  
+  const { socket, isConnected, emit, joinApplicationRoom, getVerificationStatus } = useSocket();
+  
+  const verificationStatus = getVerificationStatus(applicationId);
+
+  useEffect(() => {
+    if (applicationId && joinApplicationRoom) {
+      joinApplicationRoom(applicationId);
+    }
+  }, [applicationId, joinApplicationRoom]);
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -43,12 +47,6 @@ const RealTimeVerification = () => {
         });
         setLoading(false);
         toast.success('Location captured successfully!');
-        
-        // Update verification status
-        setVerificationStatus(prev => ({
-          ...prev,
-          location: true
-        }));
       },
       (error) => {
         setLoading(false);
@@ -79,18 +77,24 @@ const RealTimeVerification = () => {
   const capturePhoto = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
-      toast.success('Photo captured successfully!');
-      setVerificationStatus(prev => ({
-        ...prev,
-        photo: true
-      }));
-      setTimeout(() => setVerificationStep(2), 1000);
+      emit('capture-photo', {
+        applicationId,
+        imageData: imageSrc,
+        location
+      });
+      setVerificationStep(2);
     }
   };
 
   const verifyLocation = () => {
     if (location) {
-      toast.success('Location verified!');
+      emit('verify-location', {
+        applicationId,
+        coordinates: {
+          latitude: location.latitude,
+          longitude: location.longitude
+        }
+      });
       setVerificationStep(3);
     } else {
       toast.error('Please capture location first');
@@ -106,11 +110,16 @@ const RealTimeVerification = () => {
       return;
     }
     
-    toast.success('Witness verification submitted!');
-    setVerificationStatus(prev => ({
-      ...prev,
-      witness: true
-    }));
+    const witnessData = {
+      name: witnessName,
+      idNumber: witnessId,
+      signature: signatureRef.current.toDataURL()
+    };
+    
+    emit('verify-witness', {
+      applicationId,
+      witnessData
+    });
     setVerificationStep(4);
   };
 
@@ -123,12 +132,27 @@ const RealTimeVerification = () => {
       return;
     }
     
-    toast.success('ID verification submitted!');
-    setVerificationStatus(prev => ({
-      ...prev,
-      id: true
-    }));
-    setVerificationStep(5);
+    const convertToBase64 = (file) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    };
+
+    Promise.all([convertToBase64(frontImage), convertToBase64(backImage)])
+      .then(([front, back]) => {
+        emit('verify-id', {
+          applicationId,
+          idImages: { front, back }
+        });
+        setVerificationStep(5);
+      })
+      .catch(error => {
+        toast.error('Error processing images');
+        console.error(error);
+      });
   };
 
   const verifyMobileMoney = () => {
@@ -140,11 +164,11 @@ const RealTimeVerification = () => {
       return;
     }
     
-    toast.success('Mobile money verification submitted!');
-    setVerificationStatus(prev => ({
-      ...prev,
-      mobileMoney: true
-    }));
+    emit('verify-mobile-money', {
+      applicationId,
+      provider,
+      phoneNumber
+    });
     
     // Simulate final verification
     setTimeout(() => {
@@ -168,6 +192,16 @@ const RealTimeVerification = () => {
       <Header />
       
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Connection Status */}
+        <div className={`mb-4 p-3 rounded-lg flex items-center ${
+          isConnected ? 'bg-green-50 border border-green-200' : 'bg-yellow-50 border border-yellow-200'
+        }`}>
+          <div className={`w-3 h-3 rounded-full mr-3 ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'}`}></div>
+          <span className={isConnected ? 'text-green-700' : 'text-yellow-700'}>
+            {isConnected ? 'Connected to verification system' : 'Connecting...'}
+          </span>
+        </div>
+
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Real-time Verification</h1>
           <p className="text-gray-600 mt-2">
@@ -221,8 +255,9 @@ const RealTimeVerification = () => {
               <button
                 onClick={capturePhoto}
                 className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-medium"
+                disabled={!isConnected}
               >
-                📸 Capture Photo
+                {isConnected ? '📸 Capture Photo' : 'Connecting...'}
               </button>
             </div>
           </div>
@@ -266,19 +301,21 @@ const RealTimeVerification = () => {
             <div className="flex space-x-4">
               <button
                 onClick={getLocation}
-                disabled={loading || location}
+                disabled={loading || location || !isConnected}
                 className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {loading ? <LoadingSpinner size="small" color="white" /> : 
-                 location ? '📍 Location Captured' : 'Get My Location'}
+                 location ? '📍 Location Captured' : 
+                 isConnected ? 'Get My Location' : 'Connecting...'}
               </button>
               
               {location && (
                 <button
                   onClick={verifyLocation}
-                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
+                  disabled={!isConnected}
+                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
                 >
-                  Verify & Continue →
+                  {isConnected ? 'Verify & Continue →' : 'Connecting...'}
                 </button>
               )}
             </div>
@@ -343,9 +380,10 @@ const RealTimeVerification = () => {
             
             <button
               onClick={verifyWitness}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
+              disabled={!isConnected}
+              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
             >
-              Submit Witness Verification
+              {isConnected ? 'Submit Witness Verification' : 'Connecting...'}
             </button>
           </div>
         )}
@@ -394,9 +432,10 @@ const RealTimeVerification = () => {
             
             <button
               onClick={verifyID}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
+              disabled={!isConnected}
+              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
             >
-              Submit ID Verification
+              {isConnected ? 'Submit ID Verification' : 'Connecting...'}
             </button>
           </div>
         )}
@@ -448,9 +487,10 @@ const RealTimeVerification = () => {
             
             <button
               onClick={verifyMobileMoney}
-              className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
+              disabled={!isConnected}
+              className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium disabled:opacity-50"
             >
-              Complete Verification
+              {isConnected ? 'Complete Verification' : 'Connecting...'}
             </button>
           </div>
         )}
