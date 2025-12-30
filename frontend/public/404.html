@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecting...</title>
+    <script>
+      sessionStorage.redirect = location.href;
+    </script>
+    <meta http-equiv="refresh" content="0;URL='/'"></meta>
+  </head>
+  <body>
+    <p>Redirecting to application...</p>
+    <script>
+      // Alternative redirect if meta refresh doesn't work
+      if (!window.location.hash) {
+        window.location.href = '/';
+      }
+    </script>
+  </body>
+</html>
