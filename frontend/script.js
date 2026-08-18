@@ -4,24 +4,25 @@
 const API_BASE = 'https://api.nthakayathu.coop/v1'; // Replace with your actual backend
 
 // ============================================================
-//  DATA – Default products, news, impact stories (can be fetched)
+//  DATA – Default products, news, impact stories (soya-focused)
 // ============================================================
 let productsData = [
-    { id: 1, name: 'Soya Beans', description: 'High‑protein, non‑GMO soya. Ideal for oil and animal feed.', price: 'K 2,500 / kg' },
-    { id: 2, name: 'Peanut Butter', description: 'Rich, creamy, made from local groundnuts. No preservatives.', price: 'K 4,200 / jar' },
-    { id: 3, name: 'Groundnuts', description: 'Premium quality for snacking and oil production.', price: 'K 3,800 / kg' }
+    { id: 1, name: 'Soya Oil', description: 'Premium, cold-pressed soya oil for cooking and industrial use.', price: 'K 6,500 / litre' },
+    { id: 2, name: 'Soya Animal Feed', description: 'High-protein feed for poultry and livestock – made from our own soya.', price: 'K 4,200 / 50kg' },
+    { id: 3, name: 'Soya Beans (Whole)', description: 'Non-GMO, high-quality soya beans for direct sale or further processing.', price: 'K 2,800 / kg' },
+    { id: 4, name: 'Soya Flour', description: 'Gluten-free, protein-rich flour for baking and food fortification.', price: 'K 3,500 / kg' }
 ];
 
 let newsData = [
-    { id: 1, date: 'March 15, 2026', title: 'New funding partnership with UNDP', excerpt: 'Expanding soya processing capacity to 200t/year.' },
-    { id: 2, date: 'February 28, 2026', title: 'Peanut butter wins quality award', excerpt: 'Recognized as best local value‑added product.' },
-    { id: 3, date: 'January 10, 2026', title: 'Farmer training program launched', excerpt: 'Over 200 farmers enrolled in sustainable farming.' }
+    { id: 1, date: 'May 10, 2026', title: 'New Soya Oil Press Installed', excerpt: 'Capacity increased to 500 litres per day, creating 15 new jobs.' },
+    { id: 2, date: 'April 22, 2026', title: 'Soya Farmers’ Training Program', excerpt: 'Over 200 farmers trained in conservation agriculture and intercropping.' },
+    { id: 3, date: 'March 5, 2026', title: 'Export Deal Signed with Regional Buyer', excerpt: 'Nthakayathu to supply 50 tonnes of soya beans to Zambia.' }
 ];
 
 let impactData = [
-    { id: 1, name: "Grace's Journey", text: '“I went from subsistence to supplying supermarkets. Nthakayathu gave me training and market access.”', meta: 'Grace, soya farmer', color: '#4a7c59' },
-    { id: 2, name: 'Youth Agri‑prenuers', text: '“We started a peanut butter brand and now employ 5 youths. The cooperative supported us every step.”', meta: 'Charles, youth leader', color: '#8b6b4d' },
-    { id: 3, name: 'Community Health', text: '“With higher incomes, families in our village can afford better nutrition and school fees.”', meta: 'Ester, community health worker', color: '#d4a84b' }
+    { id: 1, name: "Grace's Soya Success", text: '“I tripled my income by switching to soya. Nthakayathu gave me quality seeds and a guaranteed market.”', meta: 'Grace, soya farmer', color: '#4a7c59' },
+    { id: 2, name: 'Youth in Soya Processing', text: '“We run the oil pressing unit – the cooperative trained us and now we manage production.”', meta: 'Charles, youth leader', color: '#8b6b4d' },
+    { id: 3, name: 'Community Nutrition', text: '“Soya flour has improved the health of our children. The cooperative supports school feeding programs.”', meta: 'Ester, community health worker', color: '#d4a84b' }
 ];
 
 // ============================================================
@@ -111,7 +112,7 @@ if (isAdmin) {
 }
 
 // ============================================================
-//  MODAL HANDLING (for admin add/edit)
+//  MODAL HANDLING
 // ============================================================
 function openModal(type, data = null) {
     editingType = type;
@@ -121,8 +122,10 @@ function openModal(type, data = null) {
         modalDesc.value = data ? data.description : '';
         modalPrice.value = data ? data.price : '';
         editId.value = data ? data.id : '';
-        modalPrice.placeholder = 'Price (e.g. K 2,500 / kg)';
         modalPrice.style.display = 'block';
+        // Remove any previous label
+        const label = document.querySelector('label[for="modalPrice"]');
+        if (label) label.remove();
     } else if (type === 'news') {
         modalTitle.textContent = data ? 'Edit News' : 'Add News';
         modalName.value = data ? data.title : '';
@@ -268,7 +271,6 @@ if (requestProposalBtn) {
         proposalModal.style.display = 'flex';
     });
 }
-
 if (proposalModalClose) {
     proposalModalClose.addEventListener('click', () => {
         proposalModal.style.display = 'none';
@@ -286,11 +288,8 @@ if (proposalForm) {
         const org = document.getElementById('proposalOrg').value;
         const purpose = document.getElementById('proposalPurpose').value;
 
-        // In production: POST to API_BASE + '/request-proposal'
         console.log('Proposal Request:', { name, email, org, purpose });
-
-        alert(`✅ Thank you, ${name}!\n\nWe have received your request for the full proposal.\nA verification link will be sent to ${email} within 24 hours.\n\n(Simulated: In production, the backend would email you the secured PDF.)`);
-
+        alert(`✅ Thank you, ${name}!\n\nWe have received your request for the full proposal.\nA verification link will be sent to ${email} within 24 hours.\n\n(Simulated – in production, the backend would email you the secured PDF.)`);
         proposalForm.reset();
         proposalModal.style.display = 'none';
     });
@@ -304,7 +303,6 @@ const navLinks = document.getElementById('navLinks');
 hamburger.addEventListener('click', () => {
     navLinks.classList.toggle('open');
 });
-
 document.querySelectorAll('.nav-links a').forEach(link => {
     link.addEventListener('click', () => navLinks.classList.remove('open'));
 });
@@ -331,7 +329,7 @@ renderNews();
 renderImpact();
 
 // ============================================================
-//  (Optional) Fetch from backend on load
+//  (Optional) Fetch data from backend on load
 // ============================================================
 // async function fetchData() {
 //   try {
