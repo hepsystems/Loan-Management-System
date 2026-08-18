@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nthakayathu Cooperative – Empowering Communities, Adding Value</title>
+    <meta name="description" content="Nthakayathu Cooperative empowers Malawian farmers through soya, peanut butter, and groundnuts value addition. Join us in building sustainable communities." />
+    <meta name="keywords" content="Malawi cooperative funding, soya value addition, peanut butter, groundnuts, cooperative empowerment, Nthakayathu" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header>
+        <div class="nav-inner">
+            <a href="#" class="logo">
+                <span class="logo-icon"><i class="fas fa-leaf"></i></span>
+                Nthakayathu<span>Coop</span>
+            </a>
+            <nav class="nav-links" id="navLinks">
+                <a href="#about">About</a>
+                <a href="#products">Products</a>
+                <a href="#funding">Funding</a>
+                <a href="#transparency">Transparency</a>
+                <a href="#membership">Membership</a>
+                <a href="#impact">Impact</a>
+                <a href="#news">News</a>
+                <a href="#contact">Contact</a>
+                <div class="nav-cta">
+                    <button class="lang-toggle" id="langToggle"><i class="fas fa-globe"></i> EN</button>
+                    <a href="#membership" class="btn btn-sm btn-gold">Join</a>
+                </div>
+            </nav>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ========== HERO ========== -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <span class="hero-tag">Cooperative of the Year 2025</span>
+                    <h1>Empowering Communities, <br /><span>Adding Value</span></h1>
+                    <p>We connect smallholder farmers to markets, add value through processing, and build prosperity from the ground up.</p>
+                    <div class="hero-actions">
+                        <a href="#membership" class="btn btn-gold"><i class="fas fa-user-plus"></i> Join Us</a>
+                        <a href="#funding" class="btn btn-white"><i class="fas fa-hand-holding-heart"></i> Support Us</a>
+                        <a href="#contact" class="btn btn-outline btn-white-outline"><i class="fas fa-envelope"></i> Contact</a>
+                    </div>
+                    <div class="hero-stats" id="heroStats">
+                        <div><span id="statMembers">2,300+</span> Members</div>
+                        <div><span id="statVillages">40+</span> Villages</div>
+                        <div><span id="statSoya">120t</span> Soya/year</div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="hero-image-placeholder">
+                        <i class="fas fa-seedling"></i>
+                        <span>Nthakayathu</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== ABOUT ========== -->
+    <section class="section" id="about">
+        <div class="container">
+            <div class="section-header">
+                <h2>About Us</h2>
+                <p>Our story, mission, and values</p>
+            </div>
+            <div class="about-grid">
+                <div class="about-text">
+                    <h3>Mission &amp; Vision</h3>
+                    <p>We empower rural communities through sustainable value addition. Our vision is a prosperous Malawi where every farmer thrives.</p>
+                    <ul class="values-list">
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Transparency – open books, open doors</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Sustainability – eco‑friendly and long‑term</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Empowerment – training, ownership, dignity</li>
+                    </ul>
+                    <p style="margin-top:1rem;">Founded in 2018, Nthakayathu is a farmer‑owned cooperative that has grown from 50 to over 2,300 members.</p>
+                </div>
+                <div class="about-gallery">
+                    <div class="gallery-item" style="background:#4a7c59;"><i class="fas fa-users"></i><span>Members</span></div>
+                    <div class="gallery-item" style="background:#8b6b4d;"><i class="fas fa-tractor"></i><span>Farming</span></div>
+                    <div class="gallery-item" style="background:#d4a84b;"><i class="fas fa-handshake"></i><span>Community</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRODUCTS ========== -->
+    <section class="section bg-pale" id="products">
+        <div class="container">
+            <div class="section-header">
+                <h2>Products &amp; Services</h2>
+                <p>Value‑added goodness from our farms</p>
+                <!-- Admin add button (hidden by default) -->
+                <button id="adminAddProductBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add Product</button>
+            </div>
+            <div class="products-grid" id="productsGrid">
+                <!-- Products rendered by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FUNDING ========== -->
+    <section class="section" id="funding">
+        <div class="container">
+            <div class="section-header">
+                <h2>Funding &amp; Partnerships</h2>
+                <p>Invest in impact. Download our proposals.</p>
+            </div>
+            <div class="funding-grid">
+                <div class="funding-card">
+                    <i class="fas fa-file-pdf" style="font-size:2.5rem;color:var(--brown-medium);"></i>
+                    <h4>Project Proposal 2026</h4>
+                    <p>Expansion of soya processing facility.</p>
+                    <a href="#" class="btn btn-sm btn-outline"><i class="fas fa-download"></i> Download</a>
+                </div>
+                <div class="funding-card">
+                    <i class="fas fa-file-pdf" style="font-size:2.5rem;color:var(--brown-medium);"></i>
+                    <h4>Business Plan</h4>
+                    <p>Full financials and growth strategy.</p>
+                    <a href="#" class="btn btn-sm btn-outline"><i class="fas fa-download"></i> Download</a>
+                </div>
+                <div class="funding-card support-card">
+                    <i class="fas fa-hand-holding-heart" style="font-size:2.5rem;color:var(--gold);"></i>
+                    <h4>Support Us</h4>
+                    <p>Donate via mobile money or PayPal.</p>
+                    <a href="#" class="btn btn-sm btn-gold"><i class="fas fa-donate"></i> Donate now</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== TRANSPARENCY ========== -->
+    <section class="section bg-pale" id="transparency">
+        <div class="container">
+            <div class="section-header">
+                <h2>Transparency Dashboard</h2>
+                <p>How we use funds – clear, open, accountable</p>
+            </div>
+            <div class="dashboard-grid">
+                <div class="chart-card">
+                    <h4>Funds Allocation</h4>
+                    <div class="chart-bars">
+                        <div><span>Operations</span><div class="bar" style="width:45%;"></div>45%</div>
+                        <div><span>Processing</span><div class="bar" style="width:30%;"></div>30%</div>
+                        <div><span>Training</span><div class="bar" style="width:15%;"></div>15%</div>
+                        <div><span>Admin</span><div class="bar" style="width:10%;"></div>10%</div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h4>Impact (2025)</h4>
+                    <ul style="list-style:none;padding:0;">
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 120t soya processed</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 340 farmers trained</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 2 new markets opened</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 15% income increase</li>
+                    </ul>
+                </div>
+                <div class="chart-card">
+                    <h4>Financial Reports</h4>
+                    <p><i class="fas fa-file-pdf"></i> <a href="#">Audited 2026 report</a></p>
+                    <p><i class="fas fa-file-pdf"></i> <a href="#">Quarterly 2026 summary</a></p>
+                    <p><i class="fas fa-file-pdf"></i> <a href="#">Donor impact report</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== MEMBERSHIP ========== -->
+    <section class="section" id="membership">
+        <div class="container">
+            <div class="section-header">
+                <h2>Membership Portal</h2>
+                <p>Secure login for members – access resources and reports</p>
+            </div>
+            <div class="membership-grid">
+                <div class="login-card">
+                    <h4><i class="fas fa-lock"></i> Member Login</h4>
+                    <form id="loginForm">
+                        <input type="email" placeholder="Email address" required />
+                        <input type="password" placeholder="Password" required />
+                        <button type="submit" class="btn btn-gold" style="width:100%;">Sign In</button>
+                    </form>
+                    <p style="margin-top:0.75rem;font-size:0.85rem;"><a href="#">Forgot password?</a> | <a href="#">Register</a></p>
+                </div>
+                <div class="member-benefits">
+                    <h4>Member Benefits</h4>
+                    <ul>
+                        <li><i class="fas fa-file-alt"></i> Meeting minutes</li>
+                        <li><i class="fas fa-chart-pie"></i> Financial reports</li>
+                        <li><i class="fas fa-graduation-cap"></i> Training materials</li>
+                        <li><i class="fas fa-comments"></i> Forum discussions</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== IMPACT STORIES ========== -->
+    <section class="section bg-pale" id="impact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Impact Stories</h2>
+                <p>Real lives, real change</p>
+            </div>
+            <div class="impact-grid" id="impactGrid">
+                <!-- Rendered by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== NEWS ========== -->
+    <section class="section" id="news">
+        <div class="container">
+            <div class="section-header">
+                <h2>News &amp; Updates</h2>
+                <p>Stay informed about our milestones</p>
+                <!-- Admin add button -->
+                <button id="adminAddNewsBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add News</button>
+            </div>
+            <div class="news-grid" id="newsGrid">
+                <!-- Rendered by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== CONTACT ========== -->
+    <section class="section bg-pale" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2>Contact &amp; Location</h2>
+                <p>Get in touch – we’d love to hear from you</p>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <p><i class="fas fa-map-marker-alt"></i> Mzimba, Malawi (off M1 road)</p>
+                    <p><i class="fas fa-phone"></i> +265 888 123 456</p>
+                    <p><i class="fab fa-whatsapp"></i> +265 999 654 321</p>
+                    <p><i class="fas fa-envelope"></i> info@nthakayathu.coop</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                    <div class="map-placeholder">
+                        <i class="fas fa-map"></i> Google Maps embed here
+                    </div>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <input type="text" placeholder="Your name" required />
+                    <input type="email" placeholder="Email" required />
+                    <textarea rows="4" placeholder="Message"></textarea>
+                    <button type="submit" class="btn btn-gold"><i class="fas fa-paper-plane"></i> Send</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FOOTER ========== -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <a href="#" class="logo" style="font-size:1.1rem;">
+                        <span class="logo-icon"><i class="fas fa-leaf"></i></span>
+                        Nthakayathu<span>Coop</span>
+                    </a>
+                    <p style="margin:0.5rem 0;max-width:300px;">Empowering Communities, Adding Value.</p>
+                    <p style="font-size:0.85rem;color:var(--brown-light);">© 2026 Nthakayathu Cooperative</p>
+                </div>
+                <div>
+                    <h4>Quick links</h4>
+                    <a href="#about">About</a>
+                    <a href="#products">Products</a>
+                    <a href="#funding">Funding</a>
+                    <a href="#membership">Membership</a>
+                </div>
+                <div>
+                    <h4>Support</h4>
+                    <a href="#contact">Contact</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+                <div>
+                    <h4>Follow us</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                    <p style="margin-top:0.5rem;font-size:0.85rem;"><i class="fas fa-globe"></i> English / Chichewa</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== ADMIN MODAL (for add/edit) ========== -->
+    <div id="adminModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <h3 id="modalTitle">Add Product</h3>
+            <form id="adminForm">
+                <input type="hidden" id="editId" />
+                <input type="text" id="modalName" placeholder="Name" required />
+                <input type="text" id="modalDesc" placeholder="Description" required />
+                <input type="text" id="modalPrice" placeholder="Price (e.g. K 2,500 / kg)" required />
+                <button type="submit" class="btn btn-gold" id="modalSubmit">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
