@@ -86,7 +86,7 @@
                         <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Sustainability – eco‑friendly and long‑term</li>
                         <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Empowerment – training, ownership, dignity</li>
                     </ul>
-                    <p style="margin-top:1rem;">Founded in 2018, Nthakayathu is a farmer‑owned cooperative that has grown from 50 to over 2,300 members.</p>
+                    <p style="margin-top:1rem;">Founded in 2026, Nthakayathu is a farmer‑owned cooperative that has grown from 50 to over 2,300 members.</p>
                 </div>
                 <div class="about-gallery">
                     <div class="gallery-item" style="background:#4a7c59;"><i class="fas fa-users"></i><span>Members</span></div>
@@ -103,35 +103,37 @@
             <div class="section-header">
                 <h2>Products &amp; Services</h2>
                 <p>Value‑added goodness from our farms</p>
-                <!-- Admin add button (hidden by default) -->
                 <button id="adminAddProductBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add Product</button>
             </div>
             <div class="products-grid" id="productsGrid">
-                <!-- Products rendered by JavaScript -->
+                <!-- Rendered by JavaScript -->
             </div>
         </div>
     </section>
 
-    <!-- ========== FUNDING ========== -->
+    <!-- ========== FUNDING (SECURED) ========== -->
     <section class="section" id="funding">
         <div class="container">
             <div class="section-header">
                 <h2>Funding &amp; Partnerships</h2>
-                <p>Invest in impact. Download our proposals.</p>
+                <p>Invest in impact – access our secured proposals.</p>
             </div>
             <div class="funding-grid">
+                <!-- Public Executive Summary (safe to download) -->
                 <div class="funding-card">
                     <i class="fas fa-file-pdf" style="font-size:2.5rem;color:var(--brown-medium);"></i>
-                    <h4>Project Proposal 2026</h4>
-                    <p>Expansion of soya processing facility.</p>
-                    <a href="#" class="btn btn-sm btn-outline"><i class="fas fa-download"></i> Download</a>
+                    <h4>📄 Executive Summary</h4>
+                    <p>High‑level overview of our impact and goals – safe for public viewing.</p>
+                    <a href="#" class="btn btn-sm btn-outline" onclick="alert('Downloading public summary (demo).');"><i class="fas fa-download"></i> Download</a>
                 </div>
+                <!-- Full Proposal – Gated -->
                 <div class="funding-card">
-                    <i class="fas fa-file-pdf" style="font-size:2.5rem;color:var(--brown-medium);"></i>
-                    <h4>Business Plan</h4>
-                    <p>Full financials and growth strategy.</p>
-                    <a href="#" class="btn btn-sm btn-outline"><i class="fas fa-download"></i> Download</a>
+                    <i class="fas fa-file-lock" style="font-size:2.5rem;color:var(--gold);"></i>
+                    <h4>🔒 Full Business Plan &amp; Proposal</h4>
+                    <p>Detailed financials, operational strategy, and partnership terms – access restricted.</p>
+                    <button class="btn btn-sm btn-gold" id="requestProposalBtn"><i class="fas fa-key"></i> Request Access</button>
                 </div>
+                <!-- Donation (Public) -->
                 <div class="funding-card support-card">
                     <i class="fas fa-hand-holding-heart" style="font-size:2.5rem;color:var(--gold);"></i>
                     <h4>Support Us</h4>
@@ -227,7 +229,6 @@
             <div class="section-header">
                 <h2>News &amp; Updates</h2>
                 <p>Stay informed about our milestones</p>
-                <!-- Admin add button -->
                 <button id="adminAddNewsBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add News</button>
             </div>
             <div class="news-grid" id="newsGrid">
@@ -245,7 +246,7 @@
             </div>
             <div class="contact-grid">
                 <div class="contact-info">
-                    <p><i class="fas fa-map-marker-alt"></i> Mzimba, Malawi (off M1 road)</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Blantyre, Malawi (off M1 road)</p>
                     <p><i class="fas fa-phone"></i> +265 888 123 456</p>
                     <p><i class="fab fa-whatsapp"></i> +265 999 654 321</p>
                     <p><i class="fas fa-envelope"></i> info@nthakayathu.coop</p>
@@ -322,6 +323,23 @@
         </div>
     </div>
 
+    <!-- ========== PROPOSAL REQUEST MODAL (GATED) ========== -->
+    <div id="proposalModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="proposalModalClose">&times;</span>
+            <h3><i class="fas fa-file-lock"></i> Request Full Proposal</h3>
+            <p style="margin-bottom:1rem;">Please fill in your details to access the secured business plan. We will verify your request within 24 hours.</p>
+            <form id="proposalForm">
+                <input type="text" id="proposalName" placeholder="Full Name" required />
+                <input type="email" id="proposalEmail" placeholder="Work Email (e.g., donor@foundation.org)" required />
+                <input type="text" id="proposalOrg" placeholder="Organization / Company" required />
+                <textarea id="proposalPurpose" rows="3" placeholder="Briefly state your purpose for requesting this document"></textarea>
+                <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-paper-plane"></i> Submit Request</button>
+            </form>
+            <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--text-muted);">Your data is secure. We will never share your information.</p>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
-</html>
+    </html>
