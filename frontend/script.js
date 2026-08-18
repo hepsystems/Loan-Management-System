@@ -104,7 +104,6 @@ function renderImpact() {
 if (isAdmin) {
     adminAddProductBtn.style.display = 'inline-flex';
     adminAddNewsBtn.style.display = 'inline-flex';
-    // Show admin indicator in console
     console.log('🛠️ Admin mode active');
 } else {
     adminAddProductBtn.style.display = 'none';
@@ -112,7 +111,7 @@ if (isAdmin) {
 }
 
 // ============================================================
-//  MODAL HANDLING
+//  MODAL HANDLING (for admin add/edit)
 // ============================================================
 function openModal(type, data = null) {
     editingType = type;
@@ -122,8 +121,8 @@ function openModal(type, data = null) {
         modalDesc.value = data ? data.description : '';
         modalPrice.value = data ? data.price : '';
         editId.value = data ? data.id : '';
+        modalPrice.placeholder = 'Price (e.g. K 2,500 / kg)';
         modalPrice.style.display = 'block';
-        document.querySelector('label[for="modalPrice"]')?.remove(); // no label needed
     } else if (type === 'news') {
         modalTitle.textContent = data ? 'Edit News' : 'Add News';
         modalName.value = data ? data.title : '';
@@ -159,18 +158,15 @@ adminForm.addEventListener('submit', (e) => {
 
     if (editingType === 'product') {
         if (id) {
-            // Edit existing
             const index = productsData.findIndex(p => p.id === id);
             if (index !== -1) {
                 productsData[index] = { ...productsData[index], name, description: desc, price };
             }
         } else {
-            // Add new
             const newId = Date.now();
             productsData.push({ id: newId, name, description: desc, price });
         }
         renderProducts();
-        // In a real app: send to backend via fetch
         // saveToBackend('products', productsData);
     } else if (editingType === 'news') {
         if (id) {
@@ -238,12 +234,12 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Add product button
+// Add product & news buttons
 adminAddProductBtn.addEventListener('click', () => openModal('product'));
 adminAddNewsBtn.addEventListener('click', () => openModal('news'));
 
 // ============================================================
-//  BACKEND SYNC (placeholder functions)
+//  BACKEND SYNC (placeholder)
 // ============================================================
 async function saveToBackend(endpoint, data) {
     try {
@@ -260,6 +256,47 @@ async function saveToBackend(endpoint, data) {
 }
 
 // ============================================================
+//  GATED PROPOSAL REQUEST LOGIC
+// ============================================================
+const proposalModal = document.getElementById('proposalModal');
+const proposalModalClose = document.getElementById('proposalModalClose');
+const requestProposalBtn = document.getElementById('requestProposalBtn');
+const proposalForm = document.getElementById('proposalForm');
+
+if (requestProposalBtn) {
+    requestProposalBtn.addEventListener('click', () => {
+        proposalModal.style.display = 'flex';
+    });
+}
+
+if (proposalModalClose) {
+    proposalModalClose.addEventListener('click', () => {
+        proposalModal.style.display = 'none';
+    });
+}
+window.addEventListener('click', (e) => {
+    if (e.target === proposalModal) proposalModal.style.display = 'none';
+});
+
+if (proposalForm) {
+    proposalForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('proposalName').value;
+        const email = document.getElementById('proposalEmail').value;
+        const org = document.getElementById('proposalOrg').value;
+        const purpose = document.getElementById('proposalPurpose').value;
+
+        // In production: POST to API_BASE + '/request-proposal'
+        console.log('Proposal Request:', { name, email, org, purpose });
+
+        alert(`✅ Thank you, ${name}!\n\nWe have received your request for the full proposal.\nA verification link will be sent to ${email} within 24 hours.\n\n(Simulated: In production, the backend would email you the secured PDF.)`);
+
+        proposalForm.reset();
+        proposalModal.style.display = 'none';
+    });
+}
+
+// ============================================================
 //  HAMBURGER MENU TOGGLE
 // ============================================================
 const hamburger = document.getElementById('hamburger');
@@ -268,7 +305,6 @@ hamburger.addEventListener('click', () => {
     navLinks.classList.toggle('open');
 });
 
-// Close on link click (mobile)
 document.querySelectorAll('.nav-links a').forEach(link => {
     link.addEventListener('click', () => navLinks.classList.remove('open'));
 });
@@ -295,7 +331,7 @@ renderNews();
 renderImpact();
 
 // ============================================================
-//  (Optional) Fetch data from backend on load
+//  (Optional) Fetch from backend on load
 // ============================================================
 // async function fetchData() {
 //   try {
