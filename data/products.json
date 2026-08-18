@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "name": "Soya Oil",
+    "description": "Premium, cold-pressed soya oil for cooking and industrial use.",
+    "price": "K 6,500 / litre"
+  },
+  {
+    "id": 2,
+    "name": "Soya Animal Feed",
+    "description": "High-protein feed for poultry and livestock – made from our own soya.",
+    "price": "K 4,200 / 50kg"
+  },
+  {
+    "id": 3,
+    "name": "Soya Beans (Whole)",
+    "description": "Non-GMO, high-quality soya beans for direct sale or further processing.",
+    "price": "K 2,800 / kg"
+  },
+  {
+    "id": 4,
+    "name": "Soya Flour",
+    "description": "Gluten-free, protein-rich flour for baking and food fortification.",
+    "price": "K 3,500 / kg"
+  }
+]

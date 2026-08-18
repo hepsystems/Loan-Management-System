@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Grace's Soya Success",
+    "text": "“I tripled my income by switching to soya. Nthakayathu gave me quality seeds and a guaranteed market.”",
+    "meta": "Grace, soya farmer",
+    "color": "#4a7c59"
+  },
+  {
+    "id": 2,
+    "name": "Youth in Soya Processing",
+    "text": "“We run the oil pressing unit – the cooperative trained us and now we manage production.”",
+    "meta": "Charles, youth leader",
+    "color": "#8b6b4d"
+  },
+  {
+    "id": 3,
+    "name": "Community Nutrition",
+    "text": "“Soya flour has improved the health of our children. The cooperative supports school feeding programs.”",
+    "meta": "Ester, community health worker",
+    "color": "#d4a84b"
+  }
+]

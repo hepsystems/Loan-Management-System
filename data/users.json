@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "username": "admin",
+    "passwordHash": "$2b$10$QkLZM7.k9ezRxb.gesi1SeuH5uQ1kzKqrfGupAz.JYUSUMfvPwYQC",
+    "role": "admin",
+    "name": "Cooperative Admin"
+  },
+  {
+    "id": 2,
+    "username": "member",
+    "passwordHash": "$2b$10$Sze6yPkx/xuHk4FNrL65TeVgedVKDEJ4DmI9tjTGCZL98vuKGKBzm",
+    "role": "member",
+    "name": "Demo Member"
+  }
+]
