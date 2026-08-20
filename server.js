@@ -1,27 +1,47 @@
 /**
  * Nthakayathu Soya Cooperative – Backend Server
- * Express + JSON file store + JWT auth
+ * Express + MongoDB (Atlas) via Mongoose + JWT auth
  *
- * Run: npm install && npm start
- * Default: http://localhost:3000
+ * Setup:
+ *   1. cp .env.example .env
+ *   2. Fill in MONGODB_URI (MongoDB Atlas) and JWT_SECRET in .env
+ *   3. npm install
+ *   4. npm run migrate   (optional: imports old data/*.json into MongoDB, incl. demo accounts)
+ *   5. npm start
  *
- * Demo accounts:
+ * Demo accounts (only exist after running `npm run migrate`):
  *   admin  / admin123   (full admin)
  *   member / member123  (member portal)
  */
 
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
+
+const connectDB = require('./config/db');
+const User = require('./models/User');
+const Product = require('./models/Product');
+const News = require('./models/News');
+const Impact = require('./models/Impact');
+const Order = require('./models/Order');
+const Proposal = require('./models/Proposal');
+const Contact = require('./models/Contact');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'nthakayathu-coop-dev-secret-change-in-production';
-const DATA_DIR = path.join(__dirname, 'data');
+const JWT_SECRET = process.env.JWT_SECRET;
+const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
+
+if (!JWT_SECRET) {
+  console.error('\n❌ JWT_SECRET is not set. Add it to your .env file (see .env.example).\n');
+  process.exit(1);
+}
 
 // ─── Middleware ───────────────────────────────────────────────
 app.use(cors());
@@ -29,23 +49,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// ─── Helpers ──────────────────────────────────────────────────
-function readJSON(filename) {
-  const file = path.join(DATA_DIR, filename);
-  try {
-    const raw = fs.readFileSync(file, 'utf8');
-    return JSON.parse(raw || '[]');
-  } catch (e) {
-    console.warn(`Could not read ${filename}:`, e.message);
-    return [];
-  }
-}
-
-function writeJSON(filename, data) {
-  const file = path.join(DATA_DIR, filename);
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
-}
-
+// ─── Auth helpers ─────────────────────────────────────────────
 function authRequired(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -70,29 +74,93 @@ function adminRequired(req, res, next) {
   });
 }
 
-// ─── Auth ─────────────────────────────────────────────────────
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
-  }
-
-  const users = readJSON('users.json');
-  const user = users.find(u => u.username.toLowerCase() === String(username).toLowerCase());
-  if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  const token = jwt.sign(
+function signToken(user) {
+  return jwt.sign(
     { id: user.id, username: user.username, role: user.role, name: user.name },
     JWT_SECRET,
     { expiresIn: '8h' }
   );
+}
 
-  res.json({
-    token,
-    user: { id: user.id, username: user.username, role: user.role, name: user.name }
-  });
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// ─── Auth ─────────────────────────────────────────────────────
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    let { name, username, email, password, phone } = req.body || {};
+
+    name = (name || '').trim();
+    username = (username || '').trim().toLowerCase();
+    email = (email || '').trim().toLowerCase();
+    phone = (phone || '').trim();
+
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ error: 'name, username, email and password are required' });
+    }
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'Username must be at least 3 characters' });
+    }
+    if (!EMAIL_RE.test(email)) {
+      return res.status(400).json({ error: 'Please provide a valid email address' });
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const existing = await User.findOne({ $or: [{ username }, { email }] });
+    if (existing) {
+      const field = existing.username === username ? 'Username' : 'Email';
+      return res.status(409).json({ error: `${field} is already registered` });
+    }
+
+    const passwordHash = await bcrypt.hash(String(password), SALT_ROUNDS);
+
+    const user = await User.create({
+      name,
+      username,
+      email,
+      phone,
+      passwordHash,
+      role: 'member' // public registration always creates a member, never an admin
+    });
+
+    const token = signToken(user);
+
+    res.status(201).json({
+      token,
+      user: { id: user.id, username: user.username, role: user.role, name: user.name, email: user.email }
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'Username or email is already registered' });
+    }
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+
+    const user = await User.findOne({ username: String(username).trim().toLowerCase() });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = signToken(user);
+
+    res.json({
+      token,
+      user: { id: user.id, username: user.username, role: user.role, name: user.name, email: user.email }
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Login failed. Please try again.' });
+  }
 });
 
 app.get('/api/auth/me', authRequired, (req, res) => {
@@ -100,134 +168,114 @@ app.get('/api/auth/me', authRequired, (req, res) => {
 });
 
 // ─── Products ─────────────────────────────────────────────────
-app.get('/api/products', (req, res) => {
-  res.json(readJSON('products.json'));
+app.get('/api/products', async (req, res) => {
+  res.json(await Product.find().sort({ id: 1 }));
 });
 
-app.post('/api/products', adminRequired, (req, res) => {
+app.post('/api/products', adminRequired, async (req, res) => {
   const { name, description, price } = req.body || {};
   if (!name || !description || !price) {
     return res.status(400).json({ error: 'name, description and price are required' });
   }
-  const products = readJSON('products.json');
-  const item = {
+  const item = await Product.create({
     id: Date.now(),
     name: String(name).trim(),
     description: String(description).trim(),
     price: String(price).trim()
-  };
-  products.push(item);
-  writeJSON('products.json', products);
+  });
   res.status(201).json(item);
 });
 
-app.put('/api/products/:id', adminRequired, (req, res) => {
+app.put('/api/products/:id', adminRequired, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const products = readJSON('products.json');
-  const idx = products.findIndex(p => p.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'Product not found' });
-
   const { name, description, price } = req.body || {};
-  if (name !== undefined) products[idx].name = String(name).trim();
-  if (description !== undefined) products[idx].description = String(description).trim();
-  if (price !== undefined) products[idx].price = String(price).trim();
+  const update = {};
+  if (name !== undefined) update.name = String(name).trim();
+  if (description !== undefined) update.description = String(description).trim();
+  if (price !== undefined) update.price = String(price).trim();
 
-  writeJSON('products.json', products);
-  res.json(products[idx]);
+  const product = await Product.findOneAndUpdate({ id }, update, { new: true });
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  res.json(product);
 });
 
-app.delete('/api/products/:id', adminRequired, (req, res) => {
+app.delete('/api/products/:id', adminRequired, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  let products = readJSON('products.json');
-  const before = products.length;
-  products = products.filter(p => p.id !== id);
-  if (products.length === before) return res.status(404).json({ error: 'Product not found' });
-  writeJSON('products.json', products);
+  const product = await Product.findOneAndDelete({ id });
+  if (!product) return res.status(404).json({ error: 'Product not found' });
   res.json({ success: true });
 });
 
 // ─── News ─────────────────────────────────────────────────────
-app.get('/api/news', (req, res) => {
-  res.json(readJSON('news.json'));
+app.get('/api/news', async (req, res) => {
+  res.json(await News.find().sort({ id: -1 }));
 });
 
-app.post('/api/news', adminRequired, (req, res) => {
+app.post('/api/news', adminRequired, async (req, res) => {
   const { title, excerpt, date } = req.body || {};
   if (!title || !excerpt) {
     return res.status(400).json({ error: 'title and excerpt are required' });
   }
-  const news = readJSON('news.json');
-  const item = {
+  const item = await News.create({
     id: Date.now(),
     title: String(title).trim(),
     excerpt: String(excerpt).trim(),
     date: date ? String(date).trim() : new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-  };
-  news.unshift(item);
-  writeJSON('news.json', news);
+  });
   res.status(201).json(item);
 });
 
-app.put('/api/news/:id', adminRequired, (req, res) => {
+app.put('/api/news/:id', adminRequired, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const news = readJSON('news.json');
-  const idx = news.findIndex(n => n.id === id);
-  if (idx === -1) return res.status(404).json({ error: 'News not found' });
-
   const { title, excerpt, date } = req.body || {};
-  if (title !== undefined) news[idx].title = String(title).trim();
-  if (excerpt !== undefined) news[idx].excerpt = String(excerpt).trim();
-  if (date !== undefined) news[idx].date = String(date).trim();
+  const update = {};
+  if (title !== undefined) update.title = String(title).trim();
+  if (excerpt !== undefined) update.excerpt = String(excerpt).trim();
+  if (date !== undefined) update.date = String(date).trim();
 
-  writeJSON('news.json', news);
-  res.json(news[idx]);
+  const news = await News.findOneAndUpdate({ id }, update, { new: true });
+  if (!news) return res.status(404).json({ error: 'News not found' });
+  res.json(news);
 });
 
-app.delete('/api/news/:id', adminRequired, (req, res) => {
+app.delete('/api/news/:id', adminRequired, async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  let news = readJSON('news.json');
-  const before = news.length;
-  news = news.filter(n => n.id !== id);
-  if (news.length === before) return res.status(404).json({ error: 'News not found' });
-  writeJSON('news.json', news);
+  const news = await News.findOneAndDelete({ id });
+  if (!news) return res.status(404).json({ error: 'News not found' });
   res.json({ success: true });
 });
 
 // ─── Impact stories ───────────────────────────────────────────
-app.get('/api/impact', (req, res) => {
-  res.json(readJSON('impact.json'));
+app.get('/api/impact', async (req, res) => {
+  res.json(await Impact.find().sort({ id: 1 }));
 });
 
-app.post('/api/impact', adminRequired, (req, res) => {
+app.post('/api/impact', adminRequired, async (req, res) => {
   const { name, text, meta, color } = req.body || {};
   if (!name || !text) {
     return res.status(400).json({ error: 'name and text are required' });
   }
-  const impact = readJSON('impact.json');
-  const item = {
+  const item = await Impact.create({
     id: Date.now(),
     name: String(name).trim(),
     text: String(text).trim(),
     meta: meta ? String(meta).trim() : '',
     color: color || '#4a7c59'
-  };
-  impact.push(item);
-  writeJSON('impact.json', impact);
+  });
   res.status(201).json(item);
 });
 
 // ─── Orders ───────────────────────────────────────────────────
-app.get('/api/orders', adminRequired, (req, res) => {
-  res.json(readJSON('orders.json'));
+app.get('/api/orders', adminRequired, async (req, res) => {
+  res.json(await Order.find().sort({ createdAt: -1 }));
 });
 
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', async (req, res) => {
   const { productId, productName, quantity, customerName, customerEmail, customerPhone, notes } = req.body || {};
   if (!productId || !customerName || !customerEmail) {
     return res.status(400).json({ error: 'productId, customerName and customerEmail are required' });
   }
-  const orders = readJSON('orders.json');
-  const order = {
+  const order = await Order.create({
     id: uuidv4(),
     productId: Number(productId),
     productName: productName || '',
@@ -236,36 +284,29 @@ app.post('/api/orders', (req, res) => {
     customerEmail: String(customerEmail).trim(),
     customerPhone: customerPhone ? String(customerPhone).trim() : '',
     notes: notes ? String(notes).trim() : '',
-    status: 'pending',
-    createdAt: new Date().toISOString()
-  };
-  orders.push(order);
-  writeJSON('orders.json', orders);
+    status: 'pending'
+  });
   res.status(201).json({ success: true, order });
 });
 
 // ─── Proposal requests ────────────────────────────────────────
-app.get('/api/proposals', adminRequired, (req, res) => {
-  res.json(readJSON('proposals.json'));
+app.get('/api/proposals', adminRequired, async (req, res) => {
+  res.json(await Proposal.find().sort({ createdAt: -1 }));
 });
 
-app.post('/api/proposals', (req, res) => {
+app.post('/api/proposals', async (req, res) => {
   const { name, email, org, purpose } = req.body || {};
   if (!name || !email || !purpose) {
     return res.status(400).json({ error: 'name, email and purpose are required' });
   }
-  const proposals = readJSON('proposals.json');
-  const item = {
+  await Proposal.create({
     id: uuidv4(),
     name: String(name).trim(),
     email: String(email).trim(),
     org: org ? String(org).trim() : '',
     purpose: String(purpose).trim(),
-    status: 'pending',
-    createdAt: new Date().toISOString()
-  };
-  proposals.push(item);
-  writeJSON('proposals.json', proposals);
+    status: 'pending'
+  });
   // In production: send verification email with secure link to PDF
   res.status(201).json({
     success: true,
@@ -274,26 +315,22 @@ app.post('/api/proposals', (req, res) => {
 });
 
 // ─── Contact form ─────────────────────────────────────────────
-app.get('/api/contacts', adminRequired, (req, res) => {
-  res.json(readJSON('contacts.json'));
+app.get('/api/contacts', adminRequired, async (req, res) => {
+  res.json(await Contact.find().sort({ createdAt: -1 }));
 });
 
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', async (req, res) => {
   const { name, email, subject, message } = req.body || {};
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'name, email and message are required' });
   }
-  const contacts = readJSON('contacts.json');
-  const item = {
+  await Contact.create({
     id: uuidv4(),
     name: String(name).trim(),
     email: String(email).trim(),
     subject: subject ? String(subject).trim() : 'General enquiry',
-    message: String(message).trim(),
-    createdAt: new Date().toISOString()
-  };
-  contacts.push(item);
-  writeJSON('contacts.json', contacts);
+    message: String(message).trim()
+  });
   res.status(201).json({ success: true, message: 'Thank you. We will get back to you soon.' });
 });
 
@@ -322,7 +359,12 @@ app.get('/api/member/dashboard', authRequired, (req, res) => {
 
 // ─── Health ───────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Nthakayathu Cooperative API', time: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    service: 'Nthakayathu Cooperative API',
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    time: new Date().toISOString()
+  });
 });
 
 // ─── SPA fallback ─────────────────────────────────────────────
@@ -330,10 +372,17 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
+// ─── Error handler (catches any unhandled async errors) ───────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 // ─── Start ────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n🌱 Nthakayathu Cooperative server running at http://localhost:${PORT}`);
-  console.log(`   API:  http://localhost:${PORT}/api/health`);
-  console.log(`   Admin login:  username=admin  password=admin123`);
-  console.log(`   Member login: username=member password=member123\n`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🌱 Nthakayathu Cooperative server running at http://localhost:${PORT}`);
+    console.log(`   API:  http://localhost:${PORT}/api/health`);
+    console.log(`   Register a member: POST http://localhost:${PORT}/api/auth/register\n`);
+  });
 });
