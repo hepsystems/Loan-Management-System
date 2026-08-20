@@ -410,6 +410,70 @@ if (loginForm) {
 }
 
 // ============================================================
+//  MEMBER REGISTRATION → real API
+// ============================================================
+const registerModal = document.getElementById('registerModal');
+const registerModalClose = document.getElementById('registerModalClose');
+const openRegisterBtn = document.getElementById('openRegisterBtn');
+const registerForm = document.getElementById('registerForm');
+
+if (openRegisterBtn) {
+  openRegisterBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (registerModal) registerModal.style.display = 'flex';
+  });
+}
+if (registerModalClose) {
+  registerModalClose.addEventListener('click', () => {
+    if (registerModal) registerModal.style.display = 'none';
+  });
+}
+window.addEventListener('click', (e) => {
+  if (e.target === registerModal) registerModal.style.display = 'none';
+});
+
+if (registerForm) {
+  registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('registerName')?.value?.trim();
+    const username = document.getElementById('registerUsername')?.value?.trim();
+    const email = document.getElementById('registerEmail')?.value?.trim();
+    const phone = document.getElementById('registerPhone')?.value?.trim() || '';
+    const password = document.getElementById('registerPassword')?.value || '';
+    const confirmPassword = document.getElementById('registerConfirmPassword')?.value || '';
+
+    if (!name || !username || !email || !password) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      const data = await apiSend('POST', '/auth/register', { name, username, email, phone, password });
+      // Auto sign-in after successful registration
+      authToken = data.token;
+      currentUser = data.user;
+      localStorage.setItem('nth_token', authToken);
+      localStorage.setItem('nth_user', JSON.stringify(currentUser));
+      updateAdminUI();
+
+      registerForm.reset();
+      if (registerModal) registerModal.style.display = 'none';
+      alert(`✅ Welcome, ${currentUser.name}! Your member account has been created and you are now signed in.`);
+    } catch (err) {
+      alert('Registration failed: ' + err.message);
+    }
+  });
+}
+
+// ============================================================
 //  GATED PROPOSAL REQUEST → real API
 // ============================================================
 const proposalModal = document.getElementById('proposalModal');
