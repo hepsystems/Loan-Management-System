@@ -34,25 +34,10 @@ function readJSON(filename) {
   }
 }
 
-async function migrateUsers() {
-  const users = readJSON('users.json');
-  let created = 0;
-  for (const u of users) {
-    const exists = await User.findOne({ username: u.username.toLowerCase() });
-    if (exists) continue;
-    // The old file already stores a bcrypt hash, so we carry it over as-is
-    // rather than re-hashing (which would break the known demo passwords).
-    await User.create({
-      username: u.username.toLowerCase(),
-      email: u.email || `${u.username.toLowerCase()}@nthakayathu.local`,
-      passwordHash: u.passwordHash,
-      role: u.role || 'member',
-      name: u.name || u.username
-    });
-    created++;
-  }
-  console.log(`👤 Users: ${created} created, ${users.length - created} skipped (already existed)`);
-}
+// NOTE: user accounts are intentionally NOT migrated from a JSON file.
+// Members self-register via the site's "Register" form, and the admin
+// account is created separately with `npm run create-admin` (see that
+// script for why — it avoids committing a working password hash to git).
 
 async function migrateSimple(Model, filename, label) {
   const items = readJSON(filename);
@@ -69,7 +54,6 @@ async function migrateSimple(Model, filename, label) {
 async function run() {
   await connectDB();
 
-  await migrateUsers();
   await migrateSimple(Product, 'products.json', 'Products');
   await migrateSimple(News, 'news.json', 'News');
   await migrateSimple(Impact, 'impact.json', 'Impact stories');
