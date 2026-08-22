@@ -17,52 +17,30 @@
  * update its password; otherwise the script leaves the existing account alone.
  */
 require('dotenv').config();
-const bcrypt = require('bcryptjs');
 const connectDB = require('../config/db');
-const User = require('../models/User');
+const seedAdminFromEnv = require('./seedAdmin');
 
 async function run() {
-  const { ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME } = process.env;
   const resetPassword = process.argv.includes('--reset-password');
 
-  if (!ADMIN_USERNAME || !ADMIN_EMAIL || !ADMIN_PASSWORD) {
-    console.error('\n❌ Set ADMIN_USERNAME, ADMIN_EMAIL and ADMIN_PASSWORD in your .env first.\n');
-    process.exit(1);
-  }
-  if (ADMIN_PASSWORD.length < 8) {
-    console.error('\n❌ ADMIN_PASSWORD should be at least 8 characters.\n');
-    process.exit(1);
-  }
-
   await connectDB();
+  const result = await seedAdminFromEnv({ resetPassword });
 
-  const username = ADMIN_USERNAME.trim().toLowerCase();
-  const salt = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10;
-  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, salt);
-
-  const existing = await User.findOne({ username });
-
-  if (existing) {
-    if (existing.role !== 'admin') {
-      existing.role = 'admin';
-    }
-    if (resetPassword) {
-      existing.passwordHash = passwordHash;
-      console.log(`🔐 Password reset for existing admin "${username}".`);
-    } else {
-      console.log(`ℹ️  Admin "${username}" already exists — left password unchanged.`);
+  switch (result.status) {
+    case 'skipped':
+      console.error(`\n❌ ${result.reason}. Set these in your .env first:\n   ADMIN_USERNAME, ADMIN_EMAIL, ADMIN_PASSWORD (min 8 chars), ADMIN_NAME (optional)\n`);
+      process.exit(1);
+      break;
+    case 'created':
+      console.log(`✅ Admin account "${result.username}" created.`);
+      break;
+    case 'updated':
+      console.log(`🔐 Admin account "${result.username}" updated (role and/or password).`);
+      break;
+    case 'unchanged':
+      console.log(`ℹ️  Admin "${result.username}" already exists — left password unchanged.`);
       console.log('   Re-run with --reset-password to change it.');
-    }
-    await existing.save();
-  } else {
-    await User.create({
-      name: (ADMIN_NAME || 'Cooperative Admin').trim(),
-      username,
-      email: ADMIN_EMAIL.trim().toLowerCase(),
-      passwordHash,
-      role: 'admin'
-    });
-    console.log(`✅ Admin account "${username}" created.`);
+      break;
   }
 
   console.log('\nDone. You can now remove ADMIN_PASSWORD from your .env if you like.\n');
