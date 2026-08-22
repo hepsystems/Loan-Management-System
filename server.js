@@ -461,7 +461,26 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Start ────────────────────────────────────────────────────
-connectDB().then(() => {
+const seedAdminFromEnv = require('./scripts/seedAdmin');
+
+connectDB().then(async () => {
+  // Auto-create/verify the admin account from ADMIN_* env vars on every boot.
+  // Safe to run every time (does nothing once the account already exists) —
+  // this matters on hosts like Render's free tier with no shell access to
+  // run `npm run create-admin` manually.
+  try {
+    const result = await seedAdminFromEnv();
+    if (result.status === 'created') {
+      console.log(`👤 Admin account "${result.username}" created from ADMIN_* env vars.`);
+    } else if (result.status === 'updated') {
+      console.log(`👤 Admin account "${result.username}" updated from ADMIN_* env vars.`);
+    } else if (result.status === 'skipped') {
+      console.log(`ℹ️  Admin auto-seed skipped: ${result.reason}`);
+    }
+  } catch (err) {
+    console.error('⚠️  Admin auto-seed failed:', err.message);
+  }
+
   app.listen(PORT, () => {
     console.log(`\n🌱 Nthakayathu Cooperative server running at http://localhost:${PORT}`);
     console.log(`   API:  http://localhost:${PORT}/api/health`);
