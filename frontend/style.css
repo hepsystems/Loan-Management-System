@@ -521,6 +521,24 @@ header.scrolled {
     margin-bottom: 1rem;
     font-family: inherit;
 }
+.members-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+.members-table th,
+.members-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+.members-table th {
+    color: var(--text-muted, #666);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
 .member-benefits {
     background: var(--white);
     padding: 30px;

@@ -88,6 +88,7 @@ async function loadAllData() {
     renderNews();
     renderImpact();
   }
+  loadSettings();
 }
 
 // ============================================================
@@ -133,13 +134,68 @@ function renderNews() {
 function renderImpact() {
   if (!impactGrid) return;
   impactGrid.innerHTML = impactData.map(s => `
-    <div class="story-card">
+    <div class="story-card" data-id="${s.id}">
       <div class="story-avatar" style="background:${s.color || '#4a7c59'};"><i class="fas fa-user"></i></div>
       <h4>${escapeHtml(s.name)}</h4>
       <p>${escapeHtml(s.text)}</p>
       <span class="story-meta">${escapeHtml(s.meta || '')}</span>
+      ${isAdmin() ? `
+        <div class="admin-controls">
+          <button class="btn btn-sm btn-outline edit-impact" data-id="${s.id}">Edit</button>
+          <button class="btn btn-sm btn-danger delete-impact" data-id="${s.id}">Delete</button>
+        </div>
+      ` : ''}
     </div>
   `).join('');
+}
+
+// ============================================================
+//  SITE SETTINGS (hero stats) — admin-editable instead of hardcoded
+// ============================================================
+async function loadSettings() {
+  try {
+    const settings = await apiGet('/settings');
+    const elMembers = document.getElementById('statMembers');
+    const elSoya = document.getElementById('statSoya');
+    const elProcessing = document.getElementById('statProcessing');
+    if (elMembers) elMembers.textContent = settings.statMembers;
+    if (elSoya) elSoya.textContent = settings.statSoyaFarmers;
+    if (elProcessing) elProcessing.textContent = settings.statProcessing;
+  } catch (err) {
+    console.warn('Using default hero stats:', err.message);
+  }
+}
+
+// ============================================================
+//  MEMBERS (admin only)
+// ============================================================
+async function loadMembers() {
+  const panel = document.getElementById('membersPanel');
+  const tbody = document.getElementById('membersTableBody');
+  if (!panel || !tbody) return;
+
+  if (!isAdmin()) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  try {
+    const members = await apiSend('GET', '/members');
+    panel.style.display = 'block';
+    tbody.innerHTML = members.map(m => `
+      <tr data-id="${m.id}">
+        <td>${escapeHtml(m.name)}</td>
+        <td>${escapeHtml(m.username)}</td>
+        <td>${escapeHtml(m.email)}</td>
+        <td>${escapeHtml(m.phone || '—')}</td>
+        <td>${escapeHtml(m.role)}</td>
+        <td>${m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '—'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6">No members yet.</td></tr>';
+  } catch (err) {
+    console.warn('Could not load members:', err.message);
+    panel.style.display = 'none';
+  }
 }
 
 function escapeHtml(str) {
@@ -161,8 +217,18 @@ function updateAdminUI() {
   if (adminAddNewsBtn) {
     adminAddNewsBtn.style.display = isAdmin() ? 'inline-flex' : 'none';
   }
+  const adminAddImpactBtn = document.getElementById('adminAddImpactBtn');
+  if (adminAddImpactBtn) {
+    adminAddImpactBtn.style.display = isAdmin() ? 'inline-flex' : 'none';
+  }
+  const adminEditStatsBtn = document.getElementById('adminEditStatsBtn');
+  if (adminEditStatsBtn) {
+    adminEditStatsBtn.style.display = isAdmin() ? 'inline-flex' : 'none';
+  }
   renderProducts();
   renderNews();
+  renderImpact();
+  loadMembers();
   updateLoginUI();
 }
 
@@ -207,8 +273,12 @@ function updateLoginUI() {
 // ============================================================
 //  MODAL HANDLING
 // ============================================================
+const modalExtra = document.getElementById('modalExtra');
+
 function openModal(type, data = null) {
   editingType = type;
+  modalExtra.style.display = 'none';
+  modalExtra.value = '';
   if (type === 'product') {
     modalTitle.textContent = data ? 'Edit Product' : 'Add Product';
     modalName.value = data ? data.name : '';
@@ -225,6 +295,16 @@ function openModal(type, data = null) {
     editId.value = data ? data.id : '';
     modalPrice.placeholder = 'Date (e.g. April 1, 2026)';
     modalPrice.style.display = 'block';
+  } else if (type === 'impact') {
+    modalTitle.textContent = data ? 'Edit Impact Story' : 'Add Impact Story';
+    modalName.value = data ? data.name : '';
+    modalDesc.value = data ? data.text : '';
+    modalPrice.value = data ? data.meta : '';
+    editId.value = data ? data.id : '';
+    modalPrice.placeholder = 'Meta (e.g. Machinga District)';
+    modalPrice.style.display = 'block';
+    modalExtra.value = data ? (data.color || '') : '';
+    modalExtra.style.display = 'block';
   }
   modal.style.display = 'flex';
 }
@@ -233,12 +313,57 @@ function closeModal() {
   modal.style.display = 'none';
   adminForm.reset();
   editId.value = '';
+  if (modalExtra) modalExtra.style.display = 'none';
 }
 
 if (modalClose) modalClose.addEventListener('click', closeModal);
 window.addEventListener('click', (e) => {
   if (e.target === modal) closeModal();
+  if (e.target === settingsModal) closeSettingsModal();
 });
+
+// ============================================================
+//  SITE SETTINGS MODAL (hero stats)
+// ============================================================
+const settingsModal = document.getElementById('settingsModal');
+const settingsModalClose = document.getElementById('settingsModalClose');
+const settingsForm = document.getElementById('settingsForm');
+const adminEditStatsBtnEl = document.getElementById('adminEditStatsBtn');
+
+function openSettingsModal() {
+  document.getElementById('settingsMembers').value = document.getElementById('statMembers')?.textContent || '';
+  document.getElementById('settingsSoya').value = document.getElementById('statSoya')?.textContent || '';
+  document.getElementById('settingsProcessing').value = document.getElementById('statProcessing')?.textContent || '';
+  settingsModal.style.display = 'flex';
+}
+
+function closeSettingsModal() {
+  settingsModal.style.display = 'none';
+}
+
+if (adminEditStatsBtnEl) adminEditStatsBtnEl.addEventListener('click', openSettingsModal);
+if (settingsModalClose) settingsModalClose.addEventListener('click', closeSettingsModal);
+
+if (settingsForm) {
+  settingsForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!isAdmin()) {
+      alert('Admin login required');
+      return;
+    }
+    try {
+      await apiSend('PUT', '/settings', {
+        statMembers: document.getElementById('settingsMembers').value.trim(),
+        statSoyaFarmers: document.getElementById('settingsSoya').value.trim(),
+        statProcessing: document.getElementById('settingsProcessing').value.trim()
+      });
+      await loadSettings();
+      closeSettingsModal();
+    } catch (err) {
+      alert('Save failed: ' + err.message);
+    }
+  });
+}
 
 // ============================================================
 //  ADMIN FORM SUBMIT → real API
@@ -273,6 +398,15 @@ if (adminForm) {
         }
         newsData = await apiGet('/news');
         renderNews();
+      } else if (editingType === 'impact') {
+        const color = modalExtra.value.trim() || undefined;
+        if (id) {
+          await apiSend('PUT', `/impact/${id}`, { name, text: desc, meta: price, color });
+        } else {
+          await apiSend('POST', '/impact', { name, text: desc, meta: price, color });
+        }
+        impactData = await apiGet('/impact');
+        renderImpact();
       }
       closeModal();
     } catch (err) {
@@ -359,6 +493,28 @@ document.addEventListener('click', async (e) => {
       alert('Delete failed: ' + err.message);
     }
   }
+
+  // Edit impact story
+  if (e.target.closest('.edit-impact')) {
+    const btn = e.target.closest('.edit-impact');
+    const id = parseInt(btn.dataset.id, 10);
+    const story = impactData.find(s => s.id === id);
+    if (story) openModal('impact', story);
+  }
+
+  // Delete impact story
+  if (e.target.closest('.delete-impact')) {
+    const btn = e.target.closest('.delete-impact');
+    const id = parseInt(btn.dataset.id, 10);
+    if (!confirm('Delete this impact story?')) return;
+    try {
+      await apiSend('DELETE', `/impact/${id}`);
+      impactData = await apiGet('/impact');
+      renderImpact();
+    } catch (err) {
+      alert('Delete failed: ' + err.message);
+    }
+  }
 });
 
 if (adminAddProductBtn) {
@@ -366,6 +522,10 @@ if (adminAddProductBtn) {
 }
 if (adminAddNewsBtn) {
   adminAddNewsBtn.addEventListener('click', () => openModal('news'));
+}
+const adminAddImpactBtnEl = document.getElementById('adminAddImpactBtn');
+if (adminAddImpactBtnEl) {
+  adminAddImpactBtnEl.addEventListener('click', () => openModal('impact'));
 }
 
 // ============================================================

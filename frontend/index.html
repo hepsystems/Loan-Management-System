@@ -59,6 +59,7 @@
                         <div><span id="statSoya">850+</span> Soya Farmers</div>
                         <div><span id="statProcessing">200t</span> Soya Processed / Year</div>
                     </div>
+                    <button id="adminEditStatsBtn" class="btn btn-sm btn-outline btn-white-outline" style="display:none; margin-top:10px;"><i class="fas fa-edit"></i> Edit Stats</button>
                 </div>
                 <div class="hero-image">
                     <div class="hero-image-placeholder">
@@ -195,8 +196,28 @@
                         <input type="password" id="loginPassword" name="password" placeholder="Password" required />
                         <button type="submit" class="btn btn-gold" style="width:100%;">Sign In</button>
                     </form>
-                    <p style="margin-top:0.5rem;font-size:0.8rem;color:var(--text-muted);">Demo: admin / admin123 &nbsp;|&nbsp; member / member123</p>
                     <p style="margin-top:0.5rem;font-size:0.85rem;"><a href="#">Forgot password?</a> | <a href="#" id="openRegisterBtn">Register</a></p>
+                    <!-- Admin-only: registered members list -->
+                <div id="membersPanel" style="display:none; margin-top:2rem;">
+                    <h3 style="margin-bottom:0.75rem;">Registered Members</h3>
+                    <div style="overflow-x:auto;">
+                        <table id="membersTable" class="members-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody">
+                                <!-- Rendered by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 </div>
                 <div class="member-benefits">
                     <h4>Member Benefits</h4>
@@ -217,6 +238,7 @@
             <div class="section-header">
                 <h2>Impact Stories</h2>
                 <p>Real lives, real change – from soya to prosperity</p>
+                <button id="adminAddImpactBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add Story</button>
             </div>
             <div class="impact-grid" id="impactGrid">
                 <!-- Rendered by JavaScript -->
@@ -320,7 +342,22 @@
                 <input type="text" id="modalName" placeholder="Name" required />
                 <input type="text" id="modalDesc" placeholder="Description" required />
                 <input type="text" id="modalPrice" placeholder="Price (e.g. K 2,500 / kg)" required />
+                <input type="text" id="modalExtra" placeholder="Card color (e.g. #4a7c59)" style="display:none;" />
                 <button type="submit" class="btn btn-gold" id="modalSubmit">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== SITE SETTINGS MODAL (admin: edit hero stats) ========== -->
+    <div id="settingsModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="settingsModalClose">&times;</span>
+            <h3>Edit Hero Stats</h3>
+            <form id="settingsForm">
+                <input type="text" id="settingsMembers" placeholder="Members (e.g. 2,300+)" required />
+                <input type="text" id="settingsSoya" placeholder="Soya Farmers (e.g. 850+)" required />
+                <input type="text" id="settingsProcessing" placeholder="Soya Processed / Year (e.g. 200t)" required />
+                <button type="submit" class="btn btn-gold">Save</button>
             </form>
         </div>
     </div>
