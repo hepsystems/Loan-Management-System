@@ -6,12 +6,14 @@
  *   1. cp .env.example .env
  *   2. Fill in MONGODB_URI (MongoDB Atlas) and JWT_SECRET in .env
  *   3. npm install
- *   4. npm run migrate   (optional: imports old data/*.json into MongoDB, incl. demo accounts)
- *   5. npm start
+ *   4. npm run migrate       (optional: imports old data/*.json content into MongoDB)
+ *   5. npm run create-admin  (creates/updates your admin account from ADMIN_* vars in .env)
+ *   6. npm start
  *
- * Demo accounts (only exist after running `npm run migrate`):
- *   admin  / admin123   (full admin)
- *   member / member123  (member portal)
+ * There are no baked-in demo accounts. The admin account is created from
+ * environment variables the first time you run `npm run create-admin` — see
+ * .env.example for ADMIN_USERNAME / ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_NAME.
+ * Everyone else registers themselves via the "Register" form (role: member).
  */
 
 require('dotenv').config();
@@ -32,6 +34,7 @@ const Impact = require('./models/Impact');
 const Order = require('./models/Order');
 const Proposal = require('./models/Proposal');
 const Contact = require('./models/Contact');
+const SiteSettings = require('./models/SiteSettings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -167,6 +170,32 @@ app.get('/api/auth/me', authRequired, (req, res) => {
   res.json({ user: req.user });
 });
 
+// ─── Members (admin only — never exposes passwordHash) ─────────
+app.get('/api/members', adminRequired, async (req, res) => {
+  // .select() is a second layer of defense on top of the User schema's
+  // toJSON transform, which already strips passwordHash from every response.
+  const members = await User.find()
+    .select('name username email phone role createdAt')
+    .sort({ createdAt: -1 });
+  res.json(members);
+});
+
+// Admin can promote/demote a member, but can never edit their own role
+// (prevents an admin from accidentally locking themselves out).
+app.put('/api/members/:id/role', adminRequired, async (req, res) => {
+  const { role } = req.body || {};
+  if (!['admin', 'member'].includes(role)) {
+    return res.status(400).json({ error: "role must be 'admin' or 'member'" });
+  }
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'You cannot change your own role' });
+  }
+  const member = await User.findByIdAndUpdate(req.params.id, { role }, { new: true })
+    .select('name username email phone role createdAt');
+  if (!member) return res.status(404).json({ error: 'Member not found' });
+  res.json(member);
+});
+
 // ─── Products ─────────────────────────────────────────────────
 app.get('/api/products', async (req, res) => {
   res.json(await Product.find().sort({ id: 1 }));
@@ -263,6 +292,59 @@ app.post('/api/impact', adminRequired, async (req, res) => {
     color: color || '#4a7c59'
   });
   res.status(201).json(item);
+});
+
+app.put('/api/impact/:id', adminRequired, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { name, text, meta, color } = req.body || {};
+  const update = {};
+  if (name !== undefined) update.name = String(name).trim();
+  if (text !== undefined) update.text = String(text).trim();
+  if (meta !== undefined) update.meta = String(meta).trim();
+  if (color !== undefined) update.color = String(color).trim();
+
+  const story = await Impact.findOneAndUpdate({ id }, update, { new: true });
+  if (!story) return res.status(404).json({ error: 'Impact story not found' });
+  res.json(story);
+});
+
+app.delete('/api/impact/:id', adminRequired, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const story = await Impact.findOneAndDelete({ id });
+  if (!story) return res.status(404).json({ error: 'Impact story not found' });
+  res.json({ success: true });
+});
+
+// ─── Site settings (hero stats, etc.) — edit instead of hardcode ─
+app.get('/api/settings', async (req, res) => {
+  let settings = await SiteSettings.findOne();
+  if (!settings) {
+    // First run: create the single settings doc from the site's original
+    // hardcoded values, so the admin has something sensible to edit.
+    settings = await SiteSettings.create({
+      statMembers: '2,300+',
+      statSoyaFarmers: '850+',
+      statProcessing: '200t'
+    });
+  }
+  res.json(settings);
+});
+
+app.put('/api/settings', adminRequired, async (req, res) => {
+  const { statMembers, statSoyaFarmers, statProcessing } = req.body || {};
+  const update = {};
+  if (statMembers !== undefined) update.statMembers = String(statMembers).trim();
+  if (statSoyaFarmers !== undefined) update.statSoyaFarmers = String(statSoyaFarmers).trim();
+  if (statProcessing !== undefined) update.statProcessing = String(statProcessing).trim();
+
+  let settings = await SiteSettings.findOne();
+  if (!settings) {
+    settings = await SiteSettings.create(update);
+  } else {
+    Object.assign(settings, update);
+    await settings.save();
+  }
+  res.json(settings);
 });
 
 // ─── Orders ───────────────────────────────────────────────────
