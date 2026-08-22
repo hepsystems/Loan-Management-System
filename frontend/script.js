@@ -10,7 +10,17 @@ let productsData = [];
 let newsData = [];
 let impactData = [];
 let authToken = localStorage.getItem('nth_token') || null;
-let currentUser = JSON.parse(localStorage.getItem('nth_user') || 'null');
+let currentUser = null;
+try {
+  const storedUser = localStorage.getItem('nth_user');
+  currentUser = (storedUser && storedUser !== 'undefined') ? JSON.parse(storedUser) : null;
+} catch (err) {
+  console.warn('Corrupted nth_user in localStorage, resetting:', err.message);
+  localStorage.removeItem('nth_user');
+  localStorage.removeItem('nth_token');
+  currentUser = null;
+  authToken = null;
+}
 
 function isAdmin() {
   return currentUser && currentUser.role === 'admin';
@@ -547,6 +557,9 @@ if (loginForm) {
 
     try {
       const data = await apiSend('POST', '/auth/login', { username, password });
+      if (!data || !data.token || !data.user) {
+        throw new Error('Unexpected response from server');
+      }
       authToken = data.token;
       currentUser = data.user;
       localStorage.setItem('nth_token', authToken);
@@ -617,6 +630,9 @@ if (registerForm) {
 
     try {
       const data = await apiSend('POST', '/auth/register', { name, username, email, phone, password });
+      if (!data || !data.token || !data.user) {
+        throw new Error('Unexpected response from server');
+      }
       // Auto sign-in after successful registration
       authToken = data.token;
       currentUser = data.user;
