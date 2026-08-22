@@ -18,11 +18,28 @@ Then edit `.env` and fill in:
   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
   ```
 
-Then, **optionally**, import the old demo data (including the `admin`/`admin123` and `member`/`member123` demo accounts) into your new MongoDB database:
+Then, **optionally**, import the old demo content (products, news, impact stories — no accounts) into your new MongoDB database:
 
 ```bash
 npm run migrate
 ```
+
+Create your own admin account (there are no baked-in demo accounts). Add to `.env`:
+
+```
+ADMIN_USERNAME=youradminname
+ADMIN_EMAIL=admin@yourdomain.com
+ADMIN_PASSWORD=a-strong-unique-password
+ADMIN_NAME=Cooperative Admin
+```
+
+then run:
+
+```bash
+npm run create-admin
+```
+
+Log in with those credentials, then feel free to delete `ADMIN_PASSWORD` from `.env` — it's only read once by the script.
 
 Finally:
 
@@ -32,16 +49,7 @@ npm start
 
 Open **http://localhost:3000**
 
-### Demo accounts
-
-These only exist after running `npm run migrate`:
-
-| Username | Password  | Role   |
-|----------|-----------|--------|
-| admin    | admin123  | Admin  |
-| member   | member123 | Member |
-
-New members can also self-register from the **Membership Portal → Register** link on the site.
+Regular members self-register from the **Membership Portal → Register** link on the site — no admin action needed. As an admin, once logged in you'll see a **Registered Members** table under the login form on the Membership section.
 
 ## What was fixed / added
 
@@ -57,7 +65,10 @@ New members can also self-register from the **Membership Portal → Register** l
   - `GET /api/auth/me` (protected)
   - `GET/POST/PUT/DELETE /api/products`
   - `GET/POST/PUT/DELETE /api/news`
-  - `GET/POST /api/impact`
+  - `GET/POST/PUT/DELETE /api/impact`
+  - `GET /api/members` (admin only — never returns password hashes)
+  - `PUT /api/members/:id/role` (admin only — promote/demote a member)
+  - `GET/PUT /api/settings` (hero stats — public read, admin write)
   - `POST /api/orders` (+ admin list)
   - `POST /api/proposals` (+ admin list)
   - `POST /api/contact` (+ admin list)
@@ -65,11 +76,12 @@ New members can also self-register from the **Membership Portal → Register** l
   - `GET /api/health` (reports MongoDB connection status)
 
 ### Frontend
-- Loads products, news, and impact from the API
+- Loads products, news, impact, and hero stats from the API
 - Admin controls only appear after a successful **admin** login
-- Product / news changes are saved permanently via the API
+- Product / news / impact-story changes are saved permanently via the API
+- Hero stats ("2,300+ Members" etc.) are editable by the admin instead of hardcoded in HTML
+- Admins see a **Registered Members** table (name, username, email, phone, role, joined date) under the login form
 - Orders, proposal requests, and contact messages are stored on the server
-- Login form uses username (demo credentials shown under the form)
 - **New: working "Register" modal** — creates a real account in MongoDB and signs the new member in automatically
 
 ## Project structure
