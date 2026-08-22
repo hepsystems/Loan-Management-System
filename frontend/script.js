@@ -192,16 +192,27 @@ async function loadMembers() {
   try {
     const members = await apiSend('GET', '/members');
     panel.style.display = 'block';
-    tbody.innerHTML = members.map(m => `
+    tbody.innerHTML = members.map(m => {
+      const isSelf = currentUser && m.id === currentUser.id;
+      const blocked = m.status === 'blocked';
+      return `
       <tr data-id="${m.id}">
         <td>${escapeHtml(m.name)}</td>
         <td>${escapeHtml(m.username)}</td>
         <td>${escapeHtml(m.email)}</td>
         <td>${escapeHtml(m.phone || '—')}</td>
         <td>${escapeHtml(m.role)}</td>
+        <td><span style="color:${blocked ? '#b0413e' : 'var(--green,#2d5a3d)'};font-weight:600;">${blocked ? 'Blocked' : 'Active'}</span></td>
         <td>${m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '—'}</td>
+        <td>
+          ${isSelf || m.role === 'admin' ? '<span style="color:var(--text-muted);font-size:0.8rem;">—</span>' : `
+            <button type="button" class="btn btn-sm btn-outline toggle-member-status" data-id="${m.id}" data-status="${blocked ? 'active' : 'blocked'}">${blocked ? 'Unblock' : 'Block'}</button>
+            <button type="button" class="btn btn-sm btn-danger delete-member" data-id="${m.id}">Remove</button>
+          `}
+        </td>
       </tr>
-    `).join('') || '<tr><td colspan="6">No members yet.</td></tr>';
+    `;
+    }).join('') || '<tr><td colspan="8">No members yet.</td></tr>';
   } catch (err) {
     console.warn('Could not load members:', err.message);
     panel.style.display = 'none';
@@ -525,6 +536,34 @@ document.addEventListener('click', async (e) => {
       alert('Delete failed: ' + err.message);
     }
   }
+
+  // Block / unblock a member
+  if (e.target.closest('.toggle-member-status')) {
+    const btn = e.target.closest('.toggle-member-status');
+    const id = btn.dataset.id;
+    const newStatus = btn.dataset.status; // 'active' or 'blocked'
+    const verb = newStatus === 'blocked' ? 'block' : 'unblock';
+    if (!confirm(`Are you sure you want to ${verb} this member? ${newStatus === 'blocked' ? 'They will not be able to log in until unblocked.' : ''}`)) return;
+    try {
+      await apiSend('PUT', `/members/${id}/status`, { status: newStatus });
+      loadMembers();
+    } catch (err) {
+      alert('Update failed: ' + err.message);
+    }
+  }
+
+  // Remove (permanently delete) a member
+  if (e.target.closest('.delete-member')) {
+    const btn = e.target.closest('.delete-member');
+    const id = btn.dataset.id;
+    if (!confirm('Permanently remove this member? This cannot be undone — e.g. use this if she is no longer a member or changed her mind about joining. For a temporary hold, use Block instead.')) return;
+    try {
+      await apiSend('DELETE', `/members/${id}`);
+      loadMembers();
+    } catch (err) {
+      alert('Remove failed: ' + err.message);
+    }
+  }
 });
 
 if (adminAddProductBtn) {
@@ -612,11 +651,16 @@ if (registerForm) {
     const username = document.getElementById('registerUsername')?.value?.trim();
     const email = document.getElementById('registerEmail')?.value?.trim();
     const phone = document.getElementById('registerPhone')?.value?.trim() || '';
+    const inviteCode = document.getElementById('registerInviteCode')?.value?.trim() || '';
     const password = document.getElementById('registerPassword')?.value || '';
     const confirmPassword = document.getElementById('registerConfirmPassword')?.value || '';
 
     if (!name || !username || !email || !password) {
       alert('Please fill in all required fields');
+      return;
+    }
+    if (!inviteCode) {
+      alert('A join code from the cooperative admin is required to register');
       return;
     }
     if (password !== confirmPassword) {
@@ -629,7 +673,7 @@ if (registerForm) {
     }
 
     try {
-      const data = await apiSend('POST', '/auth/register', { name, username, email, phone, password });
+      const data = await apiSend('POST', '/auth/register', { name, username, email, phone, inviteCode, password });
       if (!data || !data.token || !data.user) {
         throw new Error('Unexpected response from server');
       }
@@ -648,6 +692,192 @@ if (registerForm) {
     }
   });
 }
+
+// ============================================================
+//  FORGOT / RESET PASSWORD
+// ============================================================
+const openForgotPasswordBtn = document.getElementById('openForgotPasswordBtn');
+const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+const forgotPasswordModalClose = document.getElementById('forgotPasswordModalClose');
+const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+
+const resetPasswordModal = document.getElementById('resetPasswordModal');
+const resetPasswordModalClose = document.getElementById('resetPasswordModalClose');
+const resetPasswordForm = document.getElementById('resetPasswordForm');
+let pendingResetToken = null;
+
+if (openForgotPasswordBtn) {
+  openForgotPasswordBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (forgotPasswordModal) forgotPasswordModal.style.display = 'flex';
+  });
+}
+if (forgotPasswordModalClose) {
+  forgotPasswordModalClose.addEventListener('click', () => {
+    if (forgotPasswordModal) forgotPasswordModal.style.display = 'none';
+  });
+}
+
+if (forgotPasswordForm) {
+  forgotPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgotPasswordEmail')?.value?.trim();
+    if (!email) return;
+    try {
+      const data = await apiSend('POST', '/auth/forgot-password', { email });
+      alert(data.message || 'If that email is registered, a reset link has been generated.');
+      forgotPasswordForm.reset();
+      if (forgotPasswordModal) forgotPasswordModal.style.display = 'none';
+    } catch (err) {
+      alert('Request failed: ' + err.message);
+    }
+  });
+}
+
+if (resetPasswordModalClose) {
+  resetPasswordModalClose.addEventListener('click', () => {
+    if (resetPasswordModal) resetPasswordModal.style.display = 'none';
+  });
+}
+
+if (resetPasswordForm) {
+  resetPasswordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('resetPasswordNew')?.value || '';
+    const confirmPassword = document.getElementById('resetPasswordConfirm')?.value || '';
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters');
+      return;
+    }
+    if (!pendingResetToken) {
+      alert('Missing or expired reset link. Please request a new one.');
+      return;
+    }
+    try {
+      const data = await apiSend('POST', '/auth/reset-password', { token: pendingResetToken, password });
+      alert(data.message || 'Password updated. You can now log in.');
+      resetPasswordForm.reset();
+      pendingResetToken = null;
+      if (resetPasswordModal) resetPasswordModal.style.display = 'none';
+      // Clean the token out of the URL so it can't be reused/leaked via history
+      const url = new URL(window.location.href);
+      url.searchParams.delete('resetToken');
+      window.history.replaceState({}, document.title, url.toString());
+    } catch (err) {
+      alert('Reset failed: ' + err.message);
+    }
+  });
+}
+
+// If the page was opened from a password-reset link (?resetToken=...),
+// open the reset modal automatically.
+(function checkForResetTokenInUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('resetToken');
+  if (token) {
+    pendingResetToken = token;
+    if (resetPasswordModal) resetPasswordModal.style.display = 'flex';
+  }
+})();
+
+// ============================================================
+//  ADMIN: JOIN / INVITE CODES
+// ============================================================
+const adminManageCodesBtn = document.getElementById('adminManageCodesBtn');
+const inviteCodesModal = document.getElementById('inviteCodesModal');
+const inviteCodesModalClose = document.getElementById('inviteCodesModalClose');
+const inviteCodeForm = document.getElementById('inviteCodeForm');
+const inviteCodesTableBody = document.getElementById('inviteCodesTableBody');
+
+async function loadInviteCodes() {
+  if (!inviteCodesTableBody || !isAdmin()) return;
+  try {
+    const codes = await apiSend('GET', '/invite-codes');
+    inviteCodesTableBody.innerHTML = codes.map(c => {
+      const isExpired = c.expiresAt && new Date(c.expiresAt).getTime() < Date.now();
+      const isUsedUp = c.usesCount >= c.maxUses;
+      let statusLabel = 'Active';
+      let statusColor = 'var(--green,#2d5a3d)';
+      if (c.revoked) { statusLabel = 'Revoked'; statusColor = '#b0413e'; }
+      else if (isExpired) { statusLabel = 'Expired'; statusColor = '#b0413e'; }
+      else if (isUsedUp) { statusLabel = 'Used up'; statusColor = 'var(--text-muted)'; }
+      return `
+        <tr data-id="${c.id}">
+          <td><code>${escapeHtml(c.code)}</code></td>
+          <td>${escapeHtml(c.note || '—')}</td>
+          <td>${c.usesCount} / ${c.maxUses}</td>
+          <td>${c.expiresAt ? new Date(c.expiresAt).toLocaleDateString() : 'Never'}</td>
+          <td><span style="color:${statusColor};font-weight:600;">${statusLabel}</span></td>
+          <td>${(!c.revoked && !isExpired && !isUsedUp) ? `<button type="button" class="btn btn-sm btn-danger revoke-invite-code" data-id="${c.id}">Revoke</button>` : '<span style="color:var(--text-muted);font-size:0.8rem;">—</span>'}</td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="6">No join codes yet. Generate one above.</td></tr>';
+  } catch (err) {
+    console.warn('Could not load join codes:', err.message);
+  }
+}
+
+if (adminManageCodesBtn) {
+  adminManageCodesBtn.addEventListener('click', () => {
+    if (inviteCodesModal) inviteCodesModal.style.display = 'flex';
+    loadInviteCodes();
+  });
+}
+if (inviteCodesModalClose) {
+  inviteCodesModalClose.addEventListener('click', () => {
+    if (inviteCodesModal) inviteCodesModal.style.display = 'none';
+  });
+}
+
+window.addEventListener('click', (e) => {
+  if (e.target === forgotPasswordModal) forgotPasswordModal.style.display = 'none';
+  if (e.target === resetPasswordModal) resetPasswordModal.style.display = 'none';
+  if (e.target === inviteCodesModal) inviteCodesModal.style.display = 'none';
+});
+
+if (inviteCodeForm) {
+  inviteCodeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!isAdmin()) {
+      alert('Admin login required');
+      return;
+    }
+    const note = document.getElementById('inviteCodeNote')?.value?.trim() || '';
+    const maxUses = document.getElementById('inviteCodeMaxUses')?.value || '';
+    const expiresInDays = document.getElementById('inviteCodeExpiresDays')?.value || '';
+    try {
+      const invite = await apiSend('POST', '/invite-codes', {
+        note,
+        maxUses: maxUses || undefined,
+        expiresInDays: expiresInDays || undefined
+      });
+      inviteCodeForm.reset();
+      await loadInviteCodes();
+      alert(`✅ Join code generated: ${invite.code}\n\nShare this with the person you want to join.`);
+    } catch (err) {
+      alert('Could not generate code: ' + err.message);
+    }
+  });
+}
+
+document.addEventListener('click', async (e) => {
+  if (!isAdmin()) return;
+  if (e.target.closest('.revoke-invite-code')) {
+    const btn = e.target.closest('.revoke-invite-code');
+    const id = btn.dataset.id;
+    if (!confirm('Revoke this join code? It will no longer work for registration.')) return;
+    try {
+      await apiSend('DELETE', `/invite-codes/${id}`);
+      loadInviteCodes();
+    } catch (err) {
+      alert('Revoke failed: ' + err.message);
+    }
+  }
+});
 
 // ============================================================
 //  GATED PROPOSAL REQUEST → real API

@@ -196,10 +196,13 @@
                         <input type="password" id="loginPassword" name="password" placeholder="Password" required />
                         <button type="submit" class="btn btn-gold" style="width:100%;">Sign In</button>
                     </form>
-                    <p style="margin-top:0.5rem;font-size:0.85rem;"><a href="#">Forgot password?</a> | <a href="#" id="openRegisterBtn">Register</a></p>
+                    <p style="margin-top:0.5rem;font-size:0.85rem;"><a href="#" id="openForgotPasswordBtn">Forgot password?</a> | <a href="#" id="openRegisterBtn">Register</a></p>
                     <!-- Admin-only: registered members list -->
                 <div id="membersPanel" style="display:none; margin-top:2rem;">
-                    <h3 style="margin-bottom:0.75rem;">Registered Members</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                        <h3 style="margin:0;">Registered Members</h3>
+                        <button id="adminManageCodesBtn" class="btn btn-sm btn-gold" type="button"><i class="fas fa-key"></i> Join Codes</button>
+                    </div>
                     <div style="overflow-x:auto;">
                         <table id="membersTable" class="members-table">
                             <thead>
@@ -209,7 +212,9 @@
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th>Role</th>
+                                    <th>Status</th>
                                     <th>Joined</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="membersTableBody">
@@ -372,11 +377,12 @@
                 <input type="text" id="registerUsername" placeholder="Choose a Username" required minlength="3" />
                 <input type="email" id="registerEmail" placeholder="Email Address" required />
                 <input type="text" id="registerPhone" placeholder="Phone Number (optional)" />
+                <input type="text" id="registerInviteCode" placeholder="Join Code (from cooperative admin)" required style="text-transform:uppercase;" />
                 <input type="password" id="registerPassword" placeholder="Password (min. 6 characters)" required minlength="6" />
                 <input type="password" id="registerConfirmPassword" placeholder="Confirm Password" required minlength="6" />
                 <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-user-plus"></i> Create Account</button>
             </form>
-            <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--text-muted);">By registering you'll be signed in automatically as a cooperative member.</p>
+            <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--text-muted);">By registering you'll be signed in automatically as a cooperative member. Don't have a join code? Ask a cooperative admin for one.</p>
         </div>
     </div>
 
@@ -394,6 +400,64 @@
                 <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-paper-plane"></i> Submit Request</button>
             </form>
             <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--text-muted);">Your data is secure. We will never share your information.</p>
+        </div>
+    </div>
+
+    <!-- ========== FORGOT PASSWORD MODAL ========== -->
+    <div id="forgotPasswordModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="forgotPasswordModalClose">&times;</span>
+            <h3><i class="fas fa-key"></i> Forgot Password</h3>
+            <p style="margin-bottom:1rem;">Enter the email you registered with. If it's on file, a reset link will be generated.</p>
+            <form id="forgotPasswordForm">
+                <input type="email" id="forgotPasswordEmail" placeholder="Email Address" required />
+                <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-paper-plane"></i> Request Reset Link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== RESET PASSWORD MODAL (opened via ?resetToken=... link) ========== -->
+    <div id="resetPasswordModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="resetPasswordModalClose">&times;</span>
+            <h3><i class="fas fa-unlock-alt"></i> Set a New Password</h3>
+            <form id="resetPasswordForm">
+                <input type="password" id="resetPasswordNew" placeholder="New Password (min. 6 characters)" required minlength="6" />
+                <input type="password" id="resetPasswordConfirm" placeholder="Confirm New Password" required minlength="6" />
+                <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-check"></i> Update Password</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== ADMIN: JOIN CODES MODAL ========== -->
+    <div id="inviteCodesModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="inviteCodesModalClose">&times;</span>
+            <h3><i class="fas fa-key"></i> Join Codes</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Generate a code and give it to the person you want to join. Registration is blocked without one.</p>
+            <form id="inviteCodeForm" style="margin-bottom:1.5rem;">
+                <input type="text" id="inviteCodeNote" placeholder="Note (optional, e.g. 'For Chikwawa branch')" />
+                <input type="number" id="inviteCodeMaxUses" placeholder="Max uses (default 1)" min="1" />
+                <input type="number" id="inviteCodeExpiresDays" placeholder="Expires in days (optional, blank = never)" min="1" />
+                <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-plus"></i> Generate Code</button>
+            </form>
+            <div style="overflow-x:auto;">
+                <table class="members-table" id="inviteCodesTable">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Note</th>
+                            <th>Uses</th>
+                            <th>Expires</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inviteCodesTableBody">
+                        <!-- Rendered by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
