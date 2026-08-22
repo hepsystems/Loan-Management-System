@@ -21,6 +21,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -35,6 +36,7 @@ const Order = require('./models/Order');
 const Proposal = require('./models/Proposal');
 const Contact = require('./models/Contact');
 const SiteSettings = require('./models/SiteSettings');
+const InviteCode = require('./models/InviteCode');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -90,15 +92,19 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // ─── Auth ─────────────────────────────────────────────────────
 app.post('/api/auth/register', async (req, res) => {
   try {
-    let { name, username, email, password, phone } = req.body || {};
+    let { name, username, email, password, phone, inviteCode } = req.body || {};
 
     name = (name || '').trim();
     username = (username || '').trim().toLowerCase();
     email = (email || '').trim().toLowerCase();
     phone = (phone || '').trim();
+    inviteCode = (inviteCode || '').trim().toUpperCase();
 
     if (!name || !username || !email || !password) {
       return res.status(400).json({ error: 'name, username, email and password are required' });
+    }
+    if (!inviteCode) {
+      return res.status(400).json({ error: 'A join code from the cooperative admin is required to register' });
     }
     if (username.length < 3) {
       return res.status(400).json({ error: 'Username must be at least 3 characters' });
@@ -108,6 +114,18 @@ app.post('/api/auth/register', async (req, res) => {
     }
     if (String(password).length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Validate the invite/join code BEFORE creating the account
+    const invite = await InviteCode.findOne({ code: inviteCode });
+    if (!invite || invite.revoked) {
+      return res.status(400).json({ error: 'That join code is invalid. Please contact the cooperative admin.' });
+    }
+    if (invite.expiresAt && invite.expiresAt.getTime() < Date.now()) {
+      return res.status(400).json({ error: 'That join code has expired. Please request a new one from the admin.' });
+    }
+    if (invite.usesCount >= invite.maxUses) {
+      return res.status(400).json({ error: 'That join code has already been used up.' });
     }
 
     const existing = await User.findOne({ $or: [{ username }, { email }] });
@@ -126,6 +144,12 @@ app.post('/api/auth/register', async (req, res) => {
       passwordHash,
       role: 'member' // public registration always creates a member, never an admin
     });
+
+    // Mark the code as used (single codes become unusable after this; codes
+    // created with a higher maxUses can be shared with a small group)
+    invite.usesCount += 1;
+    invite.usedBy.push(user._id);
+    await invite.save();
 
     const token = signToken(user);
 
@@ -153,6 +177,9 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    if (user.status === 'blocked') {
+      return res.status(403).json({ error: 'This account has been blocked by the admin. Contact the cooperative for help.' });
+    }
 
     const token = signToken(user);
 
@@ -170,12 +197,114 @@ app.get('/api/auth/me', authRequired, (req, res) => {
   res.json({ user: req.user });
 });
 
+// ─── Forgot / reset password ────────────────────────────────────
+// Step 1: member requests a reset. We never reveal whether an email exists
+// (avoids leaking membership info to anyone probing the form) — response is
+// always the same generic message. A one-time token is generated, its HASH
+// is stored on the user (never the raw token), and it expires in 1 hour.
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const email = String((req.body || {}).email || '').trim().toLowerCase();
+    const genericMsg = { success: true, message: 'If that email is registered, a password reset link has been generated.' };
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.json(genericMsg); // still generic — don't reveal validation details either
+    }
+
+    const user = await User.findOne({ email });
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.resetPasswordTokenHash = tokenHash;
+      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await user.save();
+
+      // NOTE: no email service is wired up yet. For now the reset link is
+      // logged server-side so an admin/dev can relay it to the member.
+      // To go live, plug a real mailer (e.g. nodemailer + SMTP, SendGrid,
+      // Resend) in here and email `resetUrl` to the member instead of
+      // logging it.
+      const resetUrl = `${req.protocol}://${req.get('host')}/?resetToken=${rawToken}`;
+      console.log(`🔑 Password reset requested for ${email}. Reset link (valid 1h): ${resetUrl}`);
+    }
+
+    res.json(genericMsg);
+  } catch (err) {
+    console.error('Forgot-password error:', err);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// Step 2: member submits the token (from the link) + new password.
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+    if (!token || !password) {
+      return res.status(400).json({ error: 'token and password are required' });
+    }
+    if (String(password).length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+    const user = await User.findOne({
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+    if (!user) {
+      return res.status(400).json({ error: 'This reset link is invalid or has expired. Please request a new one.' });
+    }
+
+    user.passwordHash = await bcrypt.hash(String(password), SALT_ROUNDS);
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated. You can now log in with your new password.' });
+  } catch (err) {
+    console.error('Reset-password error:', err);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+});
+
+// ─── Invite / join codes (admin only) ───────────────────────────
+// Registration is gated behind one of these codes — this is the control
+// that keeps random signups out while still letting real, invited people
+// self-register instead of the admin creating every account by hand.
+app.get('/api/invite-codes', adminRequired, async (req, res) => {
+  res.json(await InviteCode.find().sort({ createdAt: -1 }));
+});
+
+app.post('/api/invite-codes', adminRequired, async (req, res) => {
+  const { note, maxUses, expiresInDays } = req.body || {};
+
+  // Generate a short, human-typeable code, e.g. NTH-7F3K9Q
+  const code = 'NTH-' + crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
+
+  const invite = await InviteCode.create({
+    code,
+    createdBy: req.user.id,
+    note: note ? String(note).trim() : '',
+    maxUses: maxUses && Number(maxUses) > 0 ? Number(maxUses) : 1,
+    expiresAt: expiresInDays && Number(expiresInDays) > 0
+      ? new Date(Date.now() + Number(expiresInDays) * 24 * 60 * 60 * 1000)
+      : null
+  });
+
+  res.status(201).json(invite);
+});
+
+app.delete('/api/invite-codes/:id', adminRequired, async (req, res) => {
+  const invite = await InviteCode.findByIdAndUpdate(req.params.id, { revoked: true }, { new: true });
+  if (!invite) return res.status(404).json({ error: 'Join code not found' });
+  res.json({ success: true, invite });
+});
+
 // ─── Members (admin only — never exposes passwordHash) ─────────
 app.get('/api/members', adminRequired, async (req, res) => {
   // .select() is a second layer of defense on top of the User schema's
   // toJSON transform, which already strips passwordHash from every response.
   const members = await User.find()
-    .select('name username email phone role createdAt')
+    .select('name username email phone role status createdAt')
     .sort({ createdAt: -1 });
   res.json(members);
 });
@@ -194,6 +323,42 @@ app.put('/api/members/:id/role', adminRequired, async (req, res) => {
     .select('name username email phone role createdAt');
   if (!member) return res.status(404).json({ error: 'Member not found' });
   res.json(member);
+});
+
+// Block/unblock a member. A blocked member's login is rejected (see
+// POST /api/auth/login) but their account and data are kept — use this
+// when someone is no longer participating but you don't want to lose
+// their record. Admin can never block themselves.
+app.put('/api/members/:id/status', adminRequired, async (req, res) => {
+  const { status } = req.body || {};
+  if (!['active', 'blocked'].includes(status)) {
+    return res.status(400).json({ error: "status must be 'active' or 'blocked'" });
+  }
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'You cannot block your own account' });
+  }
+  const member = await User.findByIdAndUpdate(req.params.id, { status }, { new: true })
+    .select('name username email phone role status createdAt');
+  if (!member) return res.status(404).json({ error: 'Member not found' });
+  res.json(member);
+});
+
+// Permanently remove a member (e.g. she is no longer a member, or changed
+// her mind about joining). This is irreversible — for a temporary/soft
+// removal, use the block endpoint above instead. Admin can never delete
+// themselves, and this route can't be used to delete other admins by
+// accident-proofing: it only removes accounts with role 'member'.
+app.delete('/api/members/:id', adminRequired, async (req, res) => {
+  if (req.params.id === req.user.id) {
+    return res.status(400).json({ error: 'You cannot delete your own account' });
+  }
+  const member = await User.findById(req.params.id);
+  if (!member) return res.status(404).json({ error: 'Member not found' });
+  if (member.role === 'admin') {
+    return res.status(400).json({ error: 'Cannot delete an admin account from here' });
+  }
+  await User.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
 });
 
 // ─── Products ─────────────────────────────────────────────────

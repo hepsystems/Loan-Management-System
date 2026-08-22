@@ -60,20 +60,37 @@ Regular members self-register from the **Membership Portal → Register** link o
 - JWT authentication
 - **New: member self-registration** (`POST /api/auth/register`) — validates input, checks for duplicate username/email, hashes the password with bcrypt, and signs the user in immediately
 - Endpoints:
-  - `POST /api/auth/register` — create a new member account
-  - `POST /api/auth/login`
+  - `POST /api/auth/register` — create a new member account (requires a valid, unused join code — see Join codes below)
+  - `POST /api/auth/login` (rejects blocked accounts)
   - `GET /api/auth/me` (protected)
+  - `POST /api/auth/forgot-password` — request a password reset (see Forgot password below)
+  - `POST /api/auth/reset-password` — complete a password reset with a token
   - `GET/POST/PUT/DELETE /api/products`
   - `GET/POST/PUT/DELETE /api/news`
   - `GET/POST/PUT/DELETE /api/impact`
   - `GET /api/members` (admin only — never returns password hashes)
   - `PUT /api/members/:id/role` (admin only — promote/demote a member)
+  - `PUT /api/members/:id/status` (admin only — block/unblock a member; blocked members can't log in)
+  - `DELETE /api/members/:id` (admin only — permanently remove a member account)
+  - `GET/POST /api/invite-codes` (admin only — list / generate join codes)
+  - `DELETE /api/invite-codes/:id` (admin only — revoke a join code)
   - `GET/PUT /api/settings` (hero stats — public read, admin write)
   - `POST /api/orders` (+ admin list)
   - `POST /api/proposals` (+ admin list)
   - `POST /api/contact` (+ admin list)
   - `GET /api/member/dashboard` (protected)
   - `GET /api/health` (reports MongoDB connection status)
+
+### Join codes (invite-only registration)
+Public registration now requires a join code. As an admin, open **Membership → Join Codes** to generate one (optionally with a note, a max number of uses, and an expiry). Give the code to the person you want to join — they enter it on the Register form. This is what keeps random signups out while still letting invited people self-register instead of you creating every account by hand.
+
+### Blocking / removing members
+In the admin **Registered Members** table, each member (other than yourself and other admins) has **Block** and **Remove** buttons:
+- **Block** — the account and its data stay, but the person can no longer log in. Use this when someone's status is uncertain (e.g. no longer active, or you're not sure they're still a member). **Unblock** reverses it.
+- **Remove** — permanently deletes the account. Use this once you're sure — e.g. she is not a member anymore, or changed her mind about joining. This cannot be undone.
+
+### Forgot password
+Currently the reset link is **logged to the server console** (not emailed) since no email service is configured yet — see item 3 under Production notes below for how to wire up real email delivery. Until then, an admin can watch the server logs (or SSH/Render logs) after a member clicks "Forgot password?", and relay the link to them directly.
 
 ### Frontend
 - Loads products, news, impact, and hero stats from the API
@@ -121,7 +138,7 @@ Nthakayathucooperative-main/
 
 1. Set `MONGODB_URI` and `JWT_SECRET` as environment variables in your hosting provider (e.g. Render → Environment tab) — never commit `.env`.
 2. In MongoDB Atlas, restrict Network Access to your server's IP (or `0.0.0.0/0` only if you understand the tradeoff), and create a dedicated database user with a strong password rather than reusing your Atlas account login.
-3. Add email delivery (e.g. Nodemailer / Resend) for proposals, order confirmations, and a real "forgot password" flow (currently a placeholder link).
+3. Add email delivery (e.g. Nodemailer / Resend) for proposals, order confirmations, and the "forgot password" flow — the reset-token logic is fully implemented, it just logs the link to the server console instead of emailing it (see `/api/auth/forgot-password` in `server.js`).
 4. Add HTTPS, rate limiting (especially on `/api/auth/login` and `/api/auth/register` to slow brute-force attempts), and additional input validation/sanitization.
 5. Implement full Chichewa translations.
 6. Replace placeholder images with authentic Malawi soya photography.
