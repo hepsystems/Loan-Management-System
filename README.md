@@ -68,10 +68,12 @@ Regular members self-register from the **Membership Portal → Register** link o
   - `GET/POST/PUT/DELETE /api/products`
   - `GET/POST/PUT/DELETE /api/news`
   - `GET/POST/PUT/DELETE /api/impact`
-  - `GET /api/members` (admin only — never returns password hashes)
-  - `PUT /api/members/:id/role` (admin only — promote/demote a member)
+  - `GET /api/members` (admin only — cooperative members only, ranked; never includes the website admin account, never returns password hashes)
   - `PUT /api/members/:id/status` (admin only — block/unblock a member; blocked members can't log in)
+  - `PUT /api/members/:id/committee` (admin only — correct/reassign a member's sub-committee)
+  - `PUT /api/members/:id/position` (admin only — correct/reassign Chair/Secretary/Treasurer/Member)
   - `DELETE /api/members/:id` (admin only — permanently remove a member account)
+  - `GET /api/members/export` (admin only — downloads a formatted PDF roster of all cooperative members)
   - `GET/POST /api/invite-codes` (admin only — list / generate join codes)
   - `DELETE /api/invite-codes/:id` (admin only — revoke a join code)
   - `GET/PUT /api/settings` (hero stats — public read, admin write)
@@ -81,11 +83,25 @@ Regular members self-register from the **Membership Portal → Register** link o
   - `GET /api/member/dashboard` (protected)
   - `GET /api/health` (reports MongoDB connection status)
 
+### Website admin vs cooperative membership
+The website admin login (created via `npm run create-admin` / `ADMIN_*` env vars) is a **technical, site-management account only** — it is never treated as a cooperative membership record. It has `role: 'admin'` and is deliberately excluded from `/api/members`, the roster PDF, and every membership-facing feature. There is no way to register a new admin through the public Register form — that form always creates `role: 'member'`. If the person running the website is also an actual cooperative office-holder or committee member, they need a **separate** member account through the normal Register form to appear on the roster — their admin login and their cooperative membership are two different accounts.
+
 ### Join codes (invite-only registration)
 Public registration now requires a join code. As an admin, open **Membership → Join Codes** to generate one (optionally with a note, a max number of uses, and an expiry). Give the code to the person you want to join — they enter it on the Register form. This is what keeps random signups out while still letting invited people self-register instead of you creating every account by hand.
 
+### Leadership positions, ranking & badges
+At registration, a member picks a **Position**: Chairperson, Secretary, Treasurer, or (default) Committee Member. The three top offices are ex-officio across every sub-committee, so picking one skips the committee picker entirely — only regular "Committee Member" registrations select a sub-committee. Only one active member can hold each of Chair/Secretary/Treasurer at a time; a duplicate registration attempt is rejected with a message to have the admin reassign the office first.
+
+Everywhere members are listed (the admin table and the roster PDF), they're **ranked automatically**: Chair, then Secretary, then Treasurer at the top (shown with a gold badge), followed by regular members grouped by sub-committee in a fixed order (Finance → Marketing → Production → Membership/Welfare/Discipline → Not Yet Assigned), alphabetically within each group. The admin can correct anyone's position or committee after the fact via the dropdowns in the Registered Members table — this also re-enforces the single-holder rule for the top 3 offices.
+
+### Downloadable members roster
+Admins can click **Download Roster** in the Registered Members panel to get a formatted PDF (`GET /api/members/export`) with the cooperative's name as a letterhead, a generated timestamp, a Leadership section, and each sub-committee as its own section — all in ranked order. The website admin account is never included, and only active members are listed.
+
+### Sub-committee selection
+The four sub-committee options are Finance/Accounts/Resource Mobilization, Marketing & Sales, Production & Technical, and Membership/Welfare/Discipline (or "not yet assigned"), matching the structure shared by the Chair. This is separate from `role` (admin vs member) — committee/position describe a member's place in the cooperative; `role` is purely a website permission level and is never set by anyone through registration.
+
 ### Blocking / removing members
-In the admin **Registered Members** table, each member (other than yourself and other admins) has **Block** and **Remove** buttons:
+In the admin **Registered Members** table, every listed member has **Block** and **Remove** buttons (the website admin account never appears here, so there's no self-block risk):
 - **Block** — the account and its data stay, but the person can no longer log in. Use this when someone's status is uncertain (e.g. no longer active, or you're not sure they're still a member). **Unblock** reverses it.
 - **Remove** — permanently deletes the account. Use this once you're sure — e.g. she is not a member anymore, or changed her mind about joining. This cannot be undone.
 

@@ -37,6 +37,7 @@ const Proposal = require('./models/Proposal');
 const Contact = require('./models/Contact');
 const SiteSettings = require('./models/SiteSettings');
 const InviteCode = require('./models/InviteCode');
+const PDFDocument = require('pdfkit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -92,19 +93,27 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // ─── Auth ─────────────────────────────────────────────────────
 app.post('/api/auth/register', async (req, res) => {
   try {
-    let { name, username, email, password, phone, inviteCode } = req.body || {};
+    let { name, username, email, password, phone, inviteCode, committee, position } = req.body || {};
 
     name = (name || '').trim();
     username = (username || '').trim().toLowerCase();
     email = (email || '').trim().toLowerCase();
     phone = (phone || '').trim();
     inviteCode = (inviteCode || '').trim().toUpperCase();
+    committee = (committee || 'none').trim();
+    position = (position || 'member').trim();
 
     if (!name || !username || !email || !password) {
       return res.status(400).json({ error: 'name, username, email and password are required' });
     }
     if (!inviteCode) {
       return res.status(400).json({ error: 'A join code from the cooperative admin is required to register' });
+    }
+    if (!User.POSITIONS.includes(position)) {
+      return res.status(400).json({ error: 'Please select a valid position' });
+    }
+    if (!User.COMMITTEES.includes(committee)) {
+      return res.status(400).json({ error: 'Please select a valid committee' });
     }
     if (username.length < 3) {
       return res.status(400).json({ error: 'Username must be at least 3 characters' });
@@ -114,6 +123,18 @@ app.post('/api/auth/register', async (req, res) => {
     }
     if (String(password).length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // The three top offices are ex-officio across every sub-committee, not
+    // tied to one — and only one active member may hold each at a time.
+    if (['chair', 'secretary', 'treasurer'].includes(position)) {
+      committee = 'none';
+      const holder = await User.findOne({ position, role: 'member', status: 'active' });
+      if (holder) {
+        return res.status(409).json({
+          error: `${User.POSITION_LABELS[position]} is already held by an active member. Ask the admin to reassign it first if this has changed.`
+        });
+      }
     }
 
     // Validate the invite/join code BEFORE creating the account
@@ -142,6 +163,8 @@ app.post('/api/auth/register', async (req, res) => {
       email,
       phone,
       passwordHash,
+      committee,
+      position,
       role: 'member' // public registration always creates a member, never an admin
     });
 
@@ -155,7 +178,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     res.status(201).json({
       token,
-      user: { id: user.id, username: user.username, role: user.role, name: user.name, email: user.email }
+      user: { id: user.id, username: user.username, role: user.role, name: user.name, email: user.email, committee: user.committee, position: user.position }
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -185,7 +208,7 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, username: user.username, role: user.role, name: user.name, email: user.email }
+      user: { id: user.id, username: user.username, role: user.role, name: user.name, email: user.email, committee: user.committee, position: user.position }
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -300,27 +323,67 @@ app.delete('/api/invite-codes/:id', adminRequired, async (req, res) => {
 });
 
 // ─── Members (admin only — never exposes passwordHash) ─────────
+// IMPORTANT: the website admin login (role: 'admin') is a technical,
+// site-management account only — it is NOT a cooperative membership record.
+// If the person managing the website is also an actual cooperative member
+// (e.g. holds Chair/Secretary/Treasurer or sits on a sub-committee), they
+// must separately register through /api/auth/register like anyone else so
+// that membership appears here. Every route below only ever touches
+// role: 'member' accounts — the admin's own account never appears in the
+// cooperative roster, is never counted, and is never exportable.
 app.get('/api/members', adminRequired, async (req, res) => {
   // .select() is a second layer of defense on top of the User schema's
   // toJSON transform, which already strips passwordHash from every response.
-  const members = await User.find()
-    .select('name username email phone role status createdAt')
-    .sort({ createdAt: -1 });
-  res.json(members);
+  const members = await User.find({ role: 'member' })
+    .select('name username email phone role status committee position createdAt');
+  res.json(User.rankMembers(members));
 });
 
-// Admin can promote/demote a member, but can never edit their own role
-// (prevents an admin from accidentally locking themselves out).
-app.put('/api/members/:id/role', adminRequired, async (req, res) => {
-  const { role } = req.body || {};
-  if (!['admin', 'member'].includes(role)) {
-    return res.status(400).json({ error: "role must be 'admin' or 'member'" });
+// Correct a member's sub-committee (they self-select one at registration,
+// but the admin can fix mistakes or reassign as committees change).
+app.put('/api/members/:id/committee', adminRequired, async (req, res) => {
+  const { committee } = req.body || {};
+  if (!User.COMMITTEES.includes(committee)) {
+    return res.status(400).json({ error: 'Please provide a valid committee' });
   }
-  if (req.params.id === req.user.id) {
-    return res.status(400).json({ error: 'You cannot change your own role' });
+  const member = await User.findByIdAndUpdate(
+    { _id: req.params.id, role: 'member' },
+    { committee },
+    { new: true }
+  ).select('name username email phone role status committee position createdAt');
+  if (!member) return res.status(404).json({ error: 'Member not found' });
+  res.json(member);
+});
+
+// Correct/reassign a member's leadership position (Chair/Secretary/
+// Treasurer/Member). Same single-holder rule as registration applies here
+// too, so the admin can't accidentally create two chairs, for example —
+// to reassign an office, first demote the current holder to 'member'.
+app.put('/api/members/:id/position', adminRequired, async (req, res) => {
+  let { position } = req.body || {};
+  position = (position || '').trim();
+  if (!User.POSITIONS.includes(position)) {
+    return res.status(400).json({ error: 'Please provide a valid position' });
   }
-  const member = await User.findByIdAndUpdate(req.params.id, { role }, { new: true })
-    .select('name username email phone role createdAt');
+
+  const update = { position };
+  if (['chair', 'secretary', 'treasurer'].includes(position)) {
+    update.committee = 'none'; // top offices are ex-officio, not tied to one committee
+    const holder = await User.findOne({
+      position, role: 'member', status: 'active', _id: { $ne: req.params.id }
+    });
+    if (holder) {
+      return res.status(409).json({
+        error: `${User.POSITION_LABELS[position]} is already held by ${holder.name}. Demote them first if this office changed hands.`
+      });
+    }
+  }
+
+  const member = await User.findOneAndUpdate(
+    { _id: req.params.id, role: 'member' },
+    update,
+    { new: true }
+  ).select('name username email phone role status committee position createdAt');
   if (!member) return res.status(404).json({ error: 'Member not found' });
   res.json(member);
 });
@@ -337,28 +400,105 @@ app.put('/api/members/:id/status', adminRequired, async (req, res) => {
   if (req.params.id === req.user.id) {
     return res.status(400).json({ error: 'You cannot block your own account' });
   }
-  const member = await User.findByIdAndUpdate(req.params.id, { status }, { new: true })
-    .select('name username email phone role status createdAt');
+  const member = await User.findOneAndUpdate(
+    { _id: req.params.id, role: 'member' },
+    { status },
+    { new: true }
+  ).select('name username email phone role status committee position createdAt');
   if (!member) return res.status(404).json({ error: 'Member not found' });
   res.json(member);
 });
 
 // Permanently remove a member (e.g. she is no longer a member, or changed
 // her mind about joining). This is irreversible — for a temporary/soft
-// removal, use the block endpoint above instead. Admin can never delete
-// themselves, and this route can't be used to delete other admins by
-// accident-proofing: it only removes accounts with role 'member'.
+// removal, use the block endpoint above instead. This route only ever
+// touches role: 'member' accounts, so the website admin account can never
+// be deleted through it.
 app.delete('/api/members/:id', adminRequired, async (req, res) => {
-  if (req.params.id === req.user.id) {
-    return res.status(400).json({ error: 'You cannot delete your own account' });
-  }
-  const member = await User.findById(req.params.id);
+  const member = await User.findOne({ _id: req.params.id, role: 'member' });
   if (!member) return res.status(404).json({ error: 'Member not found' });
-  if (member.role === 'admin') {
-    return res.status(400).json({ error: 'Cannot delete an admin account from here' });
-  }
   await User.findByIdAndDelete(req.params.id);
   res.json({ success: true });
+});
+
+// Downloadable, formatted PDF roster of all cooperative members — ranked
+// leadership first (Chair, Secretary, Treasurer), then regular members
+// grouped by sub-committee. The website admin account is never included.
+app.get('/api/members/export', adminRequired, async (req, res) => {
+  try {
+    const members = await User.find({ role: 'member', status: 'active' })
+      .select('name email phone committee position createdAt');
+    const ranked = User.rankMembers(members);
+
+    const cooperativeName = 'Nthakayathu Soya Cooperative';
+
+    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${cooperativeName.replace(/[^a-z0-9]+/gi, '-')}-members-roster.pdf"`);
+    doc.pipe(res);
+
+    // ── Letterhead ──
+    doc.fontSize(18).font('Helvetica-Bold').fillColor('#2d5a3d')
+      .text(cooperativeName.toUpperCase(), { align: 'center' });
+    doc.fontSize(11).font('Helvetica').fillColor('#555')
+      .text('Registered Members & Leadership Roster', { align: 'center' });
+    doc.fontSize(9).fillColor('#999')
+      .text(`Generated ${new Date().toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' })}`, { align: 'center' });
+    doc.moveDown(0.6);
+    doc.strokeColor('#4a7c59').lineWidth(1.2).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(1);
+
+    const leadership = ranked.filter(m => m.position !== 'member');
+    const regularByCommittee = {};
+    ranked.filter(m => m.position === 'member').forEach(m => {
+      const key = m.committee || 'none';
+      if (!regularByCommittee[key]) regularByCommittee[key] = [];
+      regularByCommittee[key].push(m);
+    });
+
+    const drawMemberRow = (m, badge) => {
+      if (doc.y > 740) doc.addPage();
+      const startY = doc.y;
+      doc.fontSize(10.5).font('Helvetica-Bold').fillColor('#000').text(m.name, 50, startY, { continued: false });
+      if (badge) {
+        doc.fontSize(8.5).font('Helvetica-Bold').fillColor('#b8860b')
+          .text(badge.toUpperCase(), 400, startY, { width: 145, align: 'right' });
+      }
+      doc.fontSize(9).font('Helvetica').fillColor('#555')
+        .text(`${m.email}${m.phone ? '  •  ' + m.phone : ''}`, 50, doc.y);
+      doc.fontSize(8).fillColor('#999')
+        .text(`Joined ${m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '—'}`, 50, doc.y);
+      doc.moveDown(0.6);
+    };
+
+    if (leadership.length) {
+      doc.fontSize(13).font('Helvetica-Bold').fillColor('#2d5a3d').text('Leadership');
+      doc.moveDown(0.3);
+      leadership.forEach(m => drawMemberRow(m, User.POSITION_LABELS[m.position]));
+      doc.moveDown(0.5);
+    }
+
+    Object.keys(User.COMMITTEE_LABELS).forEach(key => {
+      const list = regularByCommittee[key];
+      if (!list || !list.length) return;
+      if (doc.y > 700) doc.addPage();
+      doc.fontSize(13).font('Helvetica-Bold').fillColor('#2d5a3d').text(User.COMMITTEE_LABELS[key]);
+      doc.moveDown(0.3);
+      list.forEach(m => drawMemberRow(m, null));
+      doc.moveDown(0.5);
+    });
+
+    doc.moveDown(0.5);
+    doc.strokeColor('#ddd').lineWidth(0.5).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveDown(0.3);
+    doc.fontSize(9).font('Helvetica').fillColor('#888')
+      .text(`Total registered members: ${ranked.length}  (website administrator accounts are excluded from this roster)`, { align: 'left' });
+
+    doc.end();
+  } catch (err) {
+    console.error('Roster export error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Could not generate the roster document' });
+  }
 });
 
 // ─── Products ─────────────────────────────────────────────────
