@@ -430,7 +430,7 @@ app.get('/api/members/export', adminRequired, async (req, res) => {
       .select('name email phone committee position createdAt');
     const ranked = User.rankMembers(members);
 
-    const cooperativeName = 'Nthakayathu Soya Cooperative';
+    const cooperativeName = 'Nthakayathu Cooperative';
 
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     res.setHeader('Content-Type', 'application/pdf');
@@ -492,7 +492,7 @@ app.get('/api/members/export', adminRequired, async (req, res) => {
     doc.strokeColor('#ddd').lineWidth(0.5).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
     doc.moveDown(0.3);
     doc.fontSize(9).font('Helvetica').fillColor('#888')
-      .text(`Total registered members: ${ranked.length}  (website administrator accounts are excluded from this roster)`, { align: 'left' });
+      .text(`Total registered members: ${ranked.length}`, { align: 'left' });
 
     doc.end();
   } catch (err) {
