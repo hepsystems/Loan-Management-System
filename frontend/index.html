@@ -326,7 +326,7 @@
                     <h4>Support</h4>
                     <a href="#contact">Contact</a>
                     <a href="#">FAQ</a>
-                    <a href="#">Privacy Policy</a>
+                    <a href="#" id="openPrivacyPolicyBtn">Privacy Policy</a>
                 </div>
                 <div>
                     <h4>Follow us</h4>
@@ -339,8 +339,45 @@
                     <p style="margin-top:0.5rem;font-size:0.85rem;"><i class="fas fa-globe"></i> English / Chichewa</p>
                 </div>
             </div>
+            <div style="border-top:1px solid rgba(255,255,255,0.12);margin-top:1.5rem;padding-top:1rem;text-align:center;font-size:0.82rem;color:var(--brown-light);">
+                Developed by <a href="https://hepecodigitals.onrender.com/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;">Phirinex Technologies</a>
+            </div>
         </div>
     </footer>
+
+    <!-- ========== PRIVACY POLICY MODAL ========== -->
+    <div id="privacyPolicyModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width:640px;max-height:80vh;overflow-y:auto;">
+            <span class="modal-close" id="privacyPolicyModalClose">&times;</span>
+            <h3><i class="fas fa-shield-alt"></i> Privacy Policy</h3>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">Last updated: August 2026</p>
+
+            <h4 style="margin-top:1rem;">1. Who we are</h4>
+            <p>Nthakayathu Soya Cooperative ("we", "us", "the cooperative") operates this website to share information about our work, sell products, and manage our membership. This policy explains what information we collect through the site and how we use it.</p>
+
+            <h4 style="margin-top:1rem;">2. Information we collect</h4>
+            <p>When you register as a member, we collect your full name, username, email address, phone number (optional), the sub-committee you select (or your leadership position, if applicable), and a password. Your password is never stored in readable form — only a secure, one-way hash of it is kept, and we cannot see or recover your original password.</p>
+            <p>When you place an order, submit a project proposal, or use the contact form, we collect the details you choose to provide in that form (e.g. name, contact details, and message content).</p>
+
+            <h4 style="margin-top:1rem;">3. How we use your information</h4>
+            <p>We use member information to operate the cooperative — verifying who you are when you log in, showing your sub-committee/leadership position on the internal members roster, and letting cooperative admins manage membership (e.g. correcting a committee assignment, or blocking/removing an account if someone is no longer a member). We use order, proposal, and contact information to respond to your request.</p>
+
+            <h4 style="margin-top:1rem;">4. Who can see your information</h4>
+            <p>Only cooperative admins can view the full members list, and it is used solely for cooperative administration. The website admin (technical/site-management) account is separate from cooperative membership and does not automatically grant anyone cooperative office or committee status. We do not sell your personal information to third parties.</p>
+
+            <h4 style="margin-top:1rem;">5. Registration by join code</h4>
+            <p>To join as a member you need a join code issued by a cooperative admin. This helps ensure that only people known to the cooperative can register.</p>
+
+            <h4 style="margin-top:1rem;">6. Data retention</h4>
+            <p>We keep member records for as long as you remain a member, or until you ask us to remove your account (see below). Blocking an account keeps the record but prevents login; removing an account permanently deletes it.</p>
+
+            <h4 style="margin-top:1rem;">7. Your choices</h4>
+            <p>You can reset your password at any time using the "Forgot password?" link. To correct your details, update your committee/position, or permanently delete your account, contact a cooperative admin using the details on our Contact page.</p>
+
+            <h4 style="margin-top:1rem;">8. Contact us</h4>
+            <p>If you have questions about this policy or how your information is handled, please reach out via the Contact section of this website.</p>
+        </div>
+    </div>
 
     <!-- ========== ADMIN MODAL (for add/edit) ========== -->
     <div id="adminModal" class="modal" style="display:none;">

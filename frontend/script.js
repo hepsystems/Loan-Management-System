@@ -964,6 +964,28 @@ window.addEventListener('click', (e) => {
   if (e.target === inviteCodesModal) inviteCodesModal.style.display = 'none';
 });
 
+// ============================================================
+//  PRIVACY POLICY MODAL
+// ============================================================
+const openPrivacyPolicyBtn = document.getElementById('openPrivacyPolicyBtn');
+const privacyPolicyModal = document.getElementById('privacyPolicyModal');
+const privacyPolicyModalClose = document.getElementById('privacyPolicyModalClose');
+
+if (openPrivacyPolicyBtn) {
+  openPrivacyPolicyBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (privacyPolicyModal) privacyPolicyModal.style.display = 'flex';
+  });
+}
+if (privacyPolicyModalClose) {
+  privacyPolicyModalClose.addEventListener('click', () => {
+    if (privacyPolicyModal) privacyPolicyModal.style.display = 'none';
+  });
+}
+window.addEventListener('click', (e) => {
+  if (e.target === privacyPolicyModal) privacyPolicyModal.style.display = 'none';
+});
+
 if (inviteCodeForm) {
   inviteCodeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
