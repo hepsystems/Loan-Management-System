@@ -199,10 +199,14 @@
                     <p style="margin-top:0.5rem;font-size:0.85rem;"><a href="#" id="openForgotPasswordBtn">Forgot password?</a> | <a href="#" id="openRegisterBtn">Register</a></p>
                     <!-- Admin-only: registered members list -->
                 <div id="membersPanel" style="display:none; margin-top:2rem;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
                         <h3 style="margin:0;">Registered Members</h3>
-                        <button id="adminManageCodesBtn" class="btn btn-sm btn-gold" type="button"><i class="fas fa-key"></i> Join Codes</button>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button id="downloadRosterBtn" class="btn btn-sm btn-outline" type="button"><i class="fas fa-file-pdf"></i> Download Roster</button>
+                            <button id="adminManageCodesBtn" class="btn btn-sm btn-gold" type="button"><i class="fas fa-key"></i> Join Codes</button>
+                        </div>
                     </div>
+                    <p style="font-size:0.8rem;color:var(--text-muted);margin:-0.5rem 0 0.75rem;">This roster is cooperative membership only — the website admin login is a separate, technical account and never appears here.</p>
                     <div style="overflow-x:auto;">
                         <table id="membersTable" class="members-table">
                             <thead>
@@ -211,7 +215,8 @@
                                     <th>Username</th>
                                     <th>Email</th>
                                     <th>Phone</th>
-                                    <th>Role</th>
+                                    <th>Position</th>
+                                    <th>Committee</th>
                                     <th>Status</th>
                                     <th>Joined</th>
                                     <th>Actions</th>
@@ -378,11 +383,28 @@
                 <input type="email" id="registerEmail" placeholder="Email Address" required />
                 <input type="text" id="registerPhone" placeholder="Phone Number (optional)" />
                 <input type="text" id="registerInviteCode" placeholder="Join Code (from cooperative admin)" required style="text-transform:uppercase;" />
+                <select id="registerPosition" required>
+                    <option value="member" selected>Committee Member</option>
+                    <option value="chair">Chairperson</option>
+                    <option value="secretary">Secretary</option>
+                    <option value="treasurer">Treasurer</option>
+                </select>
+                <div id="registerCommitteeWrap">
+                    <select id="registerCommittee" required>
+                        <option value="" disabled selected>Select your Sub-Committee</option>
+                        <option value="finance">Finance, Accounts &amp; Resource Mobilization</option>
+                        <option value="marketing">Marketing &amp; Sales</option>
+                        <option value="production">Production &amp; Technical</option>
+                        <option value="membership_welfare">Membership, Welfare &amp; Discipline</option>
+                        <option value="none">Not yet assigned / not sure</option>
+                    </select>
+                </div>
+                <p id="registerPositionHint" style="display:none;font-size:0.78rem;color:var(--text-muted);margin:-0.5rem 0 0.75rem;">Chair, Secretary and Treasurer serve across every sub-committee, so no single committee is needed.</p>
                 <input type="password" id="registerPassword" placeholder="Password (min. 6 characters)" required minlength="6" />
                 <input type="password" id="registerConfirmPassword" placeholder="Confirm Password" required minlength="6" />
                 <button type="submit" class="btn btn-gold" style="width:100%;"><i class="fas fa-user-plus"></i> Create Account</button>
             </form>
-            <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--text-muted);">By registering you'll be signed in automatically as a cooperative member. Don't have a join code? Ask a cooperative admin for one.</p>
+            <p style="font-size:0.8rem;margin-top:0.75rem;color:var(--text-muted);">By registering you'll be signed in automatically as a cooperative member. Don't have a join code? Ask a cooperative admin for one. This form is for cooperative membership only — it never creates website admin access.</p>
         </div>
     </div>
 

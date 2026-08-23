@@ -26,6 +26,60 @@ function isAdmin() {
   return currentUser && currentUser.role === 'admin';
 }
 
+const COMMITTEE_LABELS = {
+  none: 'Not yet assigned',
+  finance: 'Finance, Accounts & Resource Mobilization',
+  marketing: 'Marketing & Sales',
+  production: 'Production & Technical',
+  membership_welfare: 'Membership, Welfare & Discipline'
+};
+
+const POSITION_LABELS = {
+  chair: 'Chairperson',
+  secretary: 'Secretary',
+  treasurer: 'Treasurer',
+  member: 'Member'
+};
+
+function positionBadgeHtml(position) {
+  const label = POSITION_LABELS[position] || 'Member';
+  if (position === 'member') return `<span style="color:var(--text-muted);">${label}</span>`;
+  return `<span style="background:#b8860b;color:#fff;font-size:0.72rem;font-weight:700;letter-spacing:0.03em;padding:2px 8px;border-radius:10px;">${label.toUpperCase()}</span>`;
+}
+
+const downloadRosterBtn = document.getElementById('downloadRosterBtn');
+if (downloadRosterBtn) {
+  downloadRosterBtn.addEventListener('click', async () => {
+    if (!isAdmin()) return;
+    downloadRosterBtn.disabled = true;
+    const originalHtml = downloadRosterBtn.innerHTML;
+    downloadRosterBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing…';
+    try {
+      const res = await fetch(`${API_BASE}/members/export`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Could not generate the roster document');
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nthakayathu-members-roster.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Download failed: ' + err.message);
+    } finally {
+      downloadRosterBtn.disabled = false;
+      downloadRosterBtn.innerHTML = originalHtml;
+    }
+  });
+}
+
 function isLoggedIn() {
   return !!authToken && !!currentUser;
 }
@@ -193,26 +247,38 @@ async function loadMembers() {
     const members = await apiSend('GET', '/members');
     panel.style.display = 'block';
     tbody.innerHTML = members.map(m => {
-      const isSelf = currentUser && m.id === currentUser.id;
       const blocked = m.status === 'blocked';
+      const isTopOffice = ['chair', 'secretary', 'treasurer'].includes(m.position);
       return `
       <tr data-id="${m.id}">
         <td>${escapeHtml(m.name)}</td>
         <td>${escapeHtml(m.username)}</td>
         <td>${escapeHtml(m.email)}</td>
         <td>${escapeHtml(m.phone || '—')}</td>
-        <td>${escapeHtml(m.role)}</td>
+        <td>
+          <select class="member-position-select" data-id="${m.id}" style="font-size:0.8rem;padding:2px 4px;">
+            ${Object.entries(POSITION_LABELS).map(([val, label]) =>
+              `<option value="${val}" ${m.position === val ? 'selected' : ''}>${escapeHtml(label)}</option>`
+            ).join('')}
+          </select>
+          <div style="margin-top:2px;">${positionBadgeHtml(m.position)}</div>
+        </td>
+        <td>
+          <select class="member-committee-select" data-id="${m.id}" ${isTopOffice ? 'disabled title="Top offices serve every committee"' : ''} style="font-size:0.8rem;padding:2px 4px;">
+            ${Object.entries(COMMITTEE_LABELS).map(([val, label]) =>
+              `<option value="${val}" ${m.committee === val ? 'selected' : ''}>${escapeHtml(label)}</option>`
+            ).join('')}
+          </select>
+        </td>
         <td><span style="color:${blocked ? '#b0413e' : 'var(--green,#2d5a3d)'};font-weight:600;">${blocked ? 'Blocked' : 'Active'}</span></td>
         <td>${m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '—'}</td>
         <td>
-          ${isSelf || m.role === 'admin' ? '<span style="color:var(--text-muted);font-size:0.8rem;">—</span>' : `
-            <button type="button" class="btn btn-sm btn-outline toggle-member-status" data-id="${m.id}" data-status="${blocked ? 'active' : 'blocked'}">${blocked ? 'Unblock' : 'Block'}</button>
-            <button type="button" class="btn btn-sm btn-danger delete-member" data-id="${m.id}">Remove</button>
-          `}
+          <button type="button" class="btn btn-sm btn-outline toggle-member-status" data-id="${m.id}" data-status="${blocked ? 'active' : 'blocked'}">${blocked ? 'Unblock' : 'Block'}</button>
+          <button type="button" class="btn btn-sm btn-danger delete-member" data-id="${m.id}">Remove</button>
         </td>
       </tr>
     `;
-    }).join('') || '<tr><td colspan="8">No members yet.</td></tr>';
+    }).join('') || '<tr><td colspan="9">No members yet.</td></tr>';
   } catch (err) {
     console.warn('Could not load members:', err.message);
     panel.style.display = 'none';
@@ -267,11 +333,20 @@ function updateLoginUI() {
   }
 
   if (isLoggedIn()) {
+    const isCoopMember = currentUser.role === 'member';
+    const committeeLine = (isCoopMember && currentUser.committee && currentUser.committee !== 'none')
+      ? `<p style="font-size:0.85rem;color:var(--text-muted);margin:0.25rem 0 0;">Committee: ${escapeHtml(COMMITTEE_LABELS[currentUser.committee] || currentUser.committee)}</p>`
+      : '';
+    const positionLine = (isCoopMember && currentUser.position)
+      ? `<p style="margin:0.35rem 0 0;">${positionBadgeHtml(currentUser.position)}</p>`
+      : '';
     statusEl.innerHTML = `
       <p style="color:var(--green, #2d5a3d); font-weight:600;">
         Logged in as <strong>${escapeHtml(currentUser.name || currentUser.username)}</strong>
-        (${escapeHtml(currentUser.role)})
+        ${isCoopMember ? '' : `(${escapeHtml(currentUser.role)})`}
       </p>
+      ${positionLine}
+      ${committeeLine}
       <button type="button" class="btn btn-sm btn-outline" id="logoutBtn" style="margin-top:0.5rem;">
         <i class="fas fa-sign-out-alt"></i> Log out
       </button>
@@ -566,6 +641,32 @@ document.addEventListener('click', async (e) => {
   }
 });
 
+document.addEventListener('change', async (e) => {
+  if (e.target.classList && e.target.classList.contains('member-committee-select')) {
+    if (!isAdmin()) return;
+    const id = e.target.dataset.id;
+    const committee = e.target.value;
+    try {
+      await apiSend('PUT', `/members/${id}/committee`, { committee });
+    } catch (err) {
+      alert('Could not update committee: ' + err.message);
+      loadMembers(); // revert the dropdown to the real value
+    }
+  }
+  if (e.target.classList && e.target.classList.contains('member-position-select')) {
+    if (!isAdmin()) return;
+    const id = e.target.dataset.id;
+    const position = e.target.value;
+    try {
+      await apiSend('PUT', `/members/${id}/position`, { position });
+      loadMembers(); // refresh badges + committee lock state + ranking
+    } catch (err) {
+      alert('Could not update position: ' + err.message);
+      loadMembers(); // revert the dropdown to the real value
+    }
+  }
+});
+
 if (adminAddProductBtn) {
   adminAddProductBtn.addEventListener('click', () => openModal('product'));
 }
@@ -628,11 +729,28 @@ const registerModal = document.getElementById('registerModal');
 const registerModalClose = document.getElementById('registerModalClose');
 const openRegisterBtn = document.getElementById('openRegisterBtn');
 const registerForm = document.getElementById('registerForm');
+const registerPositionSelect = document.getElementById('registerPosition');
+const registerCommitteeWrap = document.getElementById('registerCommitteeWrap');
+const registerPositionHint = document.getElementById('registerPositionHint');
+const registerCommitteeSelect = document.getElementById('registerCommittee');
+
+// Chair/Secretary/Treasurer serve across every sub-committee (ex-officio),
+// so the committee picker is only relevant for regular members.
+function updateRegisterCommitteeVisibility() {
+  const isTopOffice = registerPositionSelect && ['chair', 'secretary', 'treasurer'].includes(registerPositionSelect.value);
+  if (registerCommitteeWrap) registerCommitteeWrap.style.display = isTopOffice ? 'none' : 'block';
+  if (registerPositionHint) registerPositionHint.style.display = isTopOffice ? 'block' : 'none';
+  if (registerCommitteeSelect) registerCommitteeSelect.required = !isTopOffice;
+}
+if (registerPositionSelect) {
+  registerPositionSelect.addEventListener('change', updateRegisterCommitteeVisibility);
+}
 
 if (openRegisterBtn) {
   openRegisterBtn.addEventListener('click', (e) => {
     e.preventDefault();
     if (registerModal) registerModal.style.display = 'flex';
+    updateRegisterCommitteeVisibility();
   });
 }
 if (registerModalClose) {
@@ -652,6 +770,9 @@ if (registerForm) {
     const email = document.getElementById('registerEmail')?.value?.trim();
     const phone = document.getElementById('registerPhone')?.value?.trim() || '';
     const inviteCode = document.getElementById('registerInviteCode')?.value?.trim() || '';
+    const position = registerPositionSelect?.value || 'member';
+    const isTopOffice = ['chair', 'secretary', 'treasurer'].includes(position);
+    const committee = isTopOffice ? 'none' : (document.getElementById('registerCommittee')?.value || 'none');
     const password = document.getElementById('registerPassword')?.value || '';
     const confirmPassword = document.getElementById('registerConfirmPassword')?.value || '';
 
@@ -661,6 +782,10 @@ if (registerForm) {
     }
     if (!inviteCode) {
       alert('A join code from the cooperative admin is required to register');
+      return;
+    }
+    if (!isTopOffice && !committee) {
+      alert('Please select your sub-committee');
       return;
     }
     if (password !== confirmPassword) {
@@ -673,7 +798,7 @@ if (registerForm) {
     }
 
     try {
-      const data = await apiSend('POST', '/auth/register', { name, username, email, phone, inviteCode, password });
+      const data = await apiSend('POST', '/auth/register', { name, username, email, phone, inviteCode, committee, position, password });
       if (!data || !data.token || !data.user) {
         throw new Error('Unexpected response from server');
       }
