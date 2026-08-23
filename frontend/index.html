@@ -22,17 +22,17 @@
                 Nthakayathu<span>Cooperative</span>
             </a>
             <nav class="nav-links" id="navLinks">
-                <a href="#about">About</a>
-                <a href="#products">Products</a>
-                <a href="#funding">Funding</a>
-                <a href="#transparency">Transparency</a>
-                <a href="#membership">Membership</a>
-                <a href="#impact">Impact</a>
-                <a href="#news">News</a>
-                <a href="#contact">Contact</a>
+                <a href="#about" data-i18n="nav.about">About</a>
+                <a href="#products" data-i18n="nav.products">Products</a>
+                <a href="#funding" data-i18n="nav.funding">Funding</a>
+                <a href="#transparency" data-i18n="nav.transparency">Transparency</a>
+                <a href="#membership" data-i18n="nav.membership">Membership</a>
+                <a href="#impact" data-i18n="nav.impact">Impact</a>
+                <a href="#news" data-i18n="nav.news">News</a>
+                <a href="#contact" data-i18n="nav.contact">Contact</a>
                 <div class="nav-cta">
-                    <button class="lang-toggle" id="langToggle"><i class="fas fa-globe"></i> EN</button>
-                    <a href="#membership" class="btn btn-sm btn-gold">Join</a>
+                    <button class="lang-toggle" id="langToggle"><i class="fas fa-globe"></i> <span id="langToggleLabel">EN</span></button>
+                    <a href="#membership" class="btn btn-sm btn-gold" data-i18n="nav.join">Join</a>
                 </div>
             </nav>
             <button class="hamburger" id="hamburger" aria-label="Menu">
@@ -46,25 +46,25 @@
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-content">
-                    <span class="hero-tag">Malawi's Soya Value‑Addition Leader</span>
-                    <h1>Empowering Communities, <br /><span>From Soya to Success</span></h1>
-                    <p>We transform locally grown soya into high‑value products – oil, feed, and more – creating prosperity for farmers and rural communities.</p>
+                    <span class="hero-tag" data-i18n="hero.tag">Malawi's Soya Value‑Addition Leader</span>
+                    <h1 data-i18n="hero.title">Empowering Communities, <br /><span>From Soya to Success</span></h1>
+                    <p data-i18n="hero.subtitle">We transform locally grown soya into high‑value products – oil, feed, and more – creating prosperity for farmers and rural communities.</p>
                     <div class="hero-actions">
-                        <a href="#membership" class="btn btn-gold"><i class="fas fa-user-plus"></i> Join Us</a>
-                        <a href="#funding" class="btn btn-white"><i class="fas fa-hand-holding-heart"></i> Support Us</a>
-                        <a href="#contact" class="btn btn-outline btn-white-outline"><i class="fas fa-envelope"></i> Contact</a>
+                        <a href="#membership" class="btn btn-gold"><i class="fas fa-user-plus"></i> <span data-i18n="hero.joinUs">Join Us</span></a>
+                        <a href="#funding" class="btn btn-white"><i class="fas fa-hand-holding-heart"></i> <span data-i18n="hero.supportUs">Support Us</span></a>
+                        <a href="#contact" class="btn btn-outline btn-white-outline"><i class="fas fa-envelope"></i> <span data-i18n="nav.contact">Contact</span></a>
                     </div>
                     <div class="hero-stats" id="heroStats">
-                        <div><span id="statMembers">2,300+</span> Members</div>
-                        <div><span id="statSoya">850+</span> Soya Farmers</div>
-                        <div><span id="statProcessing">200t</span> Soya Processed / Year</div>
+                        <div><span id="statMembers">2,300+</span> <span data-i18n="hero.statMembers">Members</span></div>
+                        <div><span id="statSoya">850+</span> <span data-i18n="hero.statFarmers">Soya Farmers</span></div>
+                        <div><span id="statProcessing">200t</span> <span data-i18n="hero.statProcessing">Soya Processed / Year</span></div>
                     </div>
                     <button id="adminEditStatsBtn" class="btn btn-sm btn-outline btn-white-outline" style="display:none; margin-top:10px;"><i class="fas fa-edit"></i> Edit Stats</button>
                 </div>
                 <div class="hero-image">
                     <div class="hero-image-placeholder">
                         <i class="fas fa-seedling"></i>
-                        <span>Soya Value Chain</span>
+                        <span data-i18n="hero.valueChain">Soya Value Chain</span>
                     </div>
                 </div>
             </div>
@@ -75,24 +75,24 @@
     <section class="section" id="about">
         <div class="container">
             <div class="section-header">
-                <h2>About Us</h2>
-                <p>Our story, mission, and values – rooted in soya</p>
+                <h2 data-i18n="about.title">About Us</h2>
+                <p data-i18n="about.subtitle">Our story, mission, and values – rooted in soya</p>
             </div>
             <div class="about-grid">
                 <div class="about-text">
-                    <h3>Mission &amp; Vision</h3>
-                    <p>We empower rural communities through sustainable soya farming and value addition. Our vision is a prosperous Malawi where every soya farmer thrives.</p>
+                    <h3 data-i18n="about.missionTitle">Mission &amp; Vision</h3>
+                    <p data-i18n="about.missionText">We empower rural communities through sustainable soya farming and value addition. Our vision is a prosperous Malawi where every soya farmer thrives.</p>
                     <ul class="values-list">
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Transparency – open books, open doors</li>
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Sustainability – eco‑friendly farming and processing</li>
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> Empowerment – training, ownership, dignity</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="about.value1">Transparency – open books, open doors</span></li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="about.value2">Sustainability – eco‑friendly farming and processing</span></li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="about.value3">Empowerment – training, ownership, dignity</span></li>
                     </ul>
-                    <p style="margin-top:1rem;">Founded in 2026, Nthakayathu started with 21  united soya farmers. Today, we process over 200 tonnes of soya annually, producing premium oil, animal feed, and soya products.</p>
+                    <p style="margin-top:1rem;" data-i18n="about.history">Founded in 2026, Nthakayathu started with 21  united soya farmers. Today, we process over 200 tonnes of soya annually, producing premium oil, animal feed, and soya products.</p>
                 </div>
                 <div class="about-gallery">
-                    <div class="gallery-item" style="background:#4a7c59;"><i class="fas fa-seedling"></i><span>Soya Fields</span></div>
-                    <div class="gallery-item" style="background:#8b6b4d;"><i class="fas fa-oil-can"></i><span>Oil Processing</span></div>
-                    <div class="gallery-item" style="background:#d4a84b;"><i class="fas fa-handshake"></i><span>Community</span></div>
+                    <div class="gallery-item" style="background:#4a7c59;"><i class="fas fa-seedling"></i><span data-i18n="about.galleryFields">Soya Fields</span></div>
+                    <div class="gallery-item" style="background:#8b6b4d;"><i class="fas fa-oil-can"></i><span data-i18n="about.galleryOil">Oil Processing</span></div>
+                    <div class="gallery-item" style="background:#d4a84b;"><i class="fas fa-handshake"></i><span data-i18n="about.galleryCommunity">Community</span></div>
                 </div>
             </div>
         </div>
@@ -102,8 +102,8 @@
     <section class="section bg-pale" id="products">
         <div class="container">
             <div class="section-header">
-                <h2>Our Soya‑Based Products</h2>
-                <p>Value‑added goodness from our farms</p>
+                <h2 data-i18n="products.title">Our Soya‑Based Products</h2>
+                <p data-i18n="products.subtitle">Value‑added goodness from our farms</p>
                 <button id="adminAddProductBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add Product</button>
             </div>
             <div class="products-grid" id="productsGrid">
@@ -116,30 +116,30 @@
     <section class="section" id="funding">
         <div class="container">
             <div class="section-header">
-                <h2>Funding &amp; Partnerships</h2>
-                <p>Invest in soya value addition – access our secured proposals.</p>
+                <h2 data-i18n="funding.title">Funding &amp; Partnerships</h2>
+                <p data-i18n="funding.subtitle">Invest in soya value addition – access our secured proposals.</p>
             </div>
             <div class="funding-grid">
                 <!-- Public Executive Summary (safe to download) -->
                 <div class="funding-card">
                     <i class="fas fa-file-pdf" style="font-size:2.5rem;color:var(--brown-medium);"></i>
-                    <h4>📄 Executive Summary</h4>
-                    <p>High‑level overview of our soya processing expansion and impact.</p>
-                    <a href="#" class="btn btn-sm btn-outline" onclick="alert('Downloading public summary (demo).');"><i class="fas fa-download"></i> Download</a>
+                    <h4 data-i18n="funding.summaryTitle">📄 Executive Summary</h4>
+                    <p data-i18n="funding.summaryText">High‑level overview of our soya processing expansion and impact.</p>
+                    <a href="#" class="btn btn-sm btn-outline" onclick="alert('Downloading public summary (demo).');"><i class="fas fa-download"></i> <span data-i18n="funding.download">Download</span></a>
                 </div>
                 <!-- Full Proposal – Gated -->
                 <div class="funding-card">
                     <i class="fas fa-file-lock" style="font-size:2.5rem;color:var(--gold);"></i>
-                    <h4>🔒 Full Business Plan &amp; Proposal</h4>
-                    <p>Detailed financials, operational strategy for soya processing facility.</p>
-                    <button class="btn btn-sm btn-gold" id="requestProposalBtn"><i class="fas fa-key"></i> Request Access</button>
+                    <h4 data-i18n="funding.proposalTitle">🔒 Full Business Plan &amp; Proposal</h4>
+                    <p data-i18n="funding.proposalText">Detailed financials, operational strategy for soya processing facility.</p>
+                    <button class="btn btn-sm btn-gold" id="requestProposalBtn"><i class="fas fa-key"></i> <span data-i18n="funding.requestAccess">Request Access</span></button>
                 </div>
                 <!-- Donation (Public) -->
                 <div class="funding-card support-card">
                     <i class="fas fa-hand-holding-heart" style="font-size:2.5rem;color:var(--gold);"></i>
-                    <h4>Support Us</h4>
-                    <p>Donate via mobile money or PayPal to support soya farmers.</p>
-                    <a href="#" class="btn btn-sm btn-gold"><i class="fas fa-donate"></i> Donate now</a>
+                    <h4 data-i18n="funding.supportTitle">Support Us</h4>
+                    <p data-i18n="funding.supportText">Donate via mobile money or PayPal to support soya farmers.</p>
+                    <a href="#" class="btn btn-sm btn-gold"><i class="fas fa-donate"></i> <span data-i18n="funding.donateNow">Donate now</span></a>
                 </div>
             </div>
         </div>
@@ -149,33 +149,33 @@
     <section class="section bg-pale" id="transparency">
         <div class="container">
             <div class="section-header">
-                <h2>Transparency Dashboard</h2>
-                <p>How we use funds – clear, open, accountable</p>
+                <h2 data-i18n="transparency.title">Transparency Dashboard</h2>
+                <p data-i18n="transparency.subtitle">How we use funds – clear, open, accountable</p>
             </div>
             <div class="dashboard-grid">
                 <div class="chart-card">
-                    <h4>Funds Allocation</h4>
+                    <h4 data-i18n="transparency.allocationTitle">Funds Allocation</h4>
                     <div class="chart-bars">
-                        <div><span>Soya Processing</span><div class="bar" style="width:45%;"></div>45%</div>
-                        <div><span>Farmer Training</span><div class="bar" style="width:30%;"></div>30%</div>
-                        <div><span>Operations</span><div class="bar" style="width:15%;"></div>15%</div>
-                        <div><span>Admin</span><div class="bar" style="width:10%;"></div>10%</div>
+                        <div><span data-i18n="transparency.processing">Soya Processing</span><div class="bar" style="width:45%;"></div>45%</div>
+                        <div><span data-i18n="transparency.training">Farmer Training</span><div class="bar" style="width:30%;"></div>30%</div>
+                        <div><span data-i18n="transparency.operations">Operations</span><div class="bar" style="width:15%;"></div>15%</div>
+                        <div><span data-i18n="transparency.admin">Admin</span><div class="bar" style="width:10%;"></div>10%</div>
                     </div>
                 </div>
                 <div class="chart-card">
-                    <h4>Soya Impact (2025)</h4>
+                    <h4 data-i18n="transparency.impactTitle">Soya Impact (2025)</h4>
                     <ul style="list-style:none;padding:0;">
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 200t soya processed</li>
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 340 farmers trained in soya farming</li>
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 2 new export markets opened</li>
-                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> 25% income increase for members</li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="transparency.impact1">200t soya processed</span></li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="transparency.impact2">340 farmers trained in soya farming</span></li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="transparency.impact3">2 new export markets opened</span></li>
+                        <li><i class="fas fa-check-circle" style="color:var(--gold);"></i> <span data-i18n="transparency.impact4">25% income increase for members</span></li>
                     </ul>
                 </div>
                 <div class="chart-card">
-                    <h4>Financial Reports</h4>
-                    <p><i class="fas fa-file-pdf"></i> <a href="#">Audited 2026 report</a></p>
-                    <p><i class="fas fa-file-pdf"></i> <a href="#">Quarterly 2026 summary</a></p>
-                    <p><i class="fas fa-file-pdf"></i> <a href="#">Soya value chain impact report</a></p>
+                    <h4 data-i18n="transparency.reportsTitle">Financial Reports</h4>
+                    <p><i class="fas fa-file-pdf"></i> <a href="#" data-i18n="transparency.report1">Audited 2026 report</a></p>
+                    <p><i class="fas fa-file-pdf"></i> <a href="#" data-i18n="transparency.report2">Quarterly 2026 summary</a></p>
+                    <p><i class="fas fa-file-pdf"></i> <a href="#" data-i18n="transparency.report3">Soya value chain impact report</a></p>
                 </div>
             </div>
         </div>
@@ -185,19 +185,19 @@
     <section class="section" id="membership">
         <div class="container">
             <div class="section-header">
-                <h2>Membership Portal</h2>
-                <p>Secure login for members – access resources and reports</p>
+                <h2 data-i18n="membership.title">Membership Portal</h2>
+                <p data-i18n="membership.subtitle">Secure login for members – access resources and reports</p>
             </div>
             <div class="membership-grid">
                 <div class="login-card">
-                    <h4><i class="fas fa-lock"></i> Member Login</h4>
+                    <h4><i class="fas fa-lock"></i> <span data-i18n="membership.loginTitle">Member Login</span></h4>
                     <form id="loginForm">
-                        <input type="text" id="loginUsername" name="username" placeholder="Username" required />
-                        <input type="password" id="loginPassword" name="password" placeholder="Password" required />
-                        <button type="submit" class="btn btn-gold" style="width:100%;">Sign In</button>
+                        <input type="text" id="loginUsername" name="username" placeholder="Username" data-i18n-placeholder="membership.username" required />
+                        <input type="password" id="loginPassword" name="password" placeholder="Password" data-i18n-placeholder="membership.password" required />
+                        <button type="submit" class="btn btn-gold" style="width:100%;" data-i18n="membership.signIn">Sign In</button>
                     </form>
-                    <p style="margin-top:0.5rem;font-size:0.85rem;"><a href="#" id="openForgotPasswordBtn">Forgot password?</a> | <a href="#" id="openRegisterBtn">Register</a></p>
-                    <!-- Admin-only: registered members list -->
+                    <p style="margin-top:0.5rem;font-size:0.85rem;"><a href="#" id="openForgotPasswordBtn" data-i18n="membership.forgotPassword">Forgot password?</a> | <a href="#" id="openRegisterBtn" data-i18n="membership.register">Register</a></p>
+                    <!-- Admin-only: registered members list (kept in English — internal tooling, not public-facing content) -->
                 <div id="membersPanel" style="display:none; margin-top:2rem;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
                         <h3 style="margin:0;">Registered Members</h3>
@@ -230,12 +230,12 @@
                 </div>
                 </div>
                 <div class="member-benefits">
-                    <h4>Member Benefits</h4>
+                    <h4 data-i18n="membership.benefitsTitle">Member Benefits</h4>
                     <ul>
-                        <li><i class="fas fa-file-alt"></i> Meeting minutes</li>
-                        <li><i class="fas fa-chart-pie"></i> Soya production data</li>
-                        <li><i class="fas fa-graduation-cap"></i> Training materials</li>
-                        <li><i class="fas fa-comments"></i> Forum discussions</li>
+                        <li><i class="fas fa-file-alt"></i> <span data-i18n="membership.benefit1">Meeting minutes</span></li>
+                        <li><i class="fas fa-chart-pie"></i> <span data-i18n="membership.benefit2">Soya production data</span></li>
+                        <li><i class="fas fa-graduation-cap"></i> <span data-i18n="membership.benefit3">Training materials</span></li>
+                        <li><i class="fas fa-comments"></i> <span data-i18n="membership.benefit4">Forum discussions</span></li>
                     </ul>
                 </div>
             </div>
@@ -246,8 +246,8 @@
     <section class="section bg-pale" id="impact">
         <div class="container">
             <div class="section-header">
-                <h2>Impact Stories</h2>
-                <p>Real lives, real change – from soya to prosperity</p>
+                <h2 data-i18n="impact.title">Impact Stories</h2>
+                <p data-i18n="impact.subtitle">Real lives, real change – from soya to prosperity</p>
                 <button id="adminAddImpactBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add Story</button>
             </div>
             <div class="impact-grid" id="impactGrid">
@@ -260,8 +260,8 @@
     <section class="section" id="news">
         <div class="container">
             <div class="section-header">
-                <h2>News &amp; Updates</h2>
-                <p>Stay informed about our milestones in soya value addition</p>
+                <h2 data-i18n="news.title">News &amp; Updates</h2>
+                <p data-i18n="news.subtitle">Stay informed about our milestones in soya value addition</p>
                 <button id="adminAddNewsBtn" class="btn btn-sm btn-gold" style="display:none; margin-top:10px;"><i class="fas fa-plus"></i> Add News</button>
             </div>
             <div class="news-grid" id="newsGrid">
@@ -274,8 +274,8 @@
     <section class="section bg-pale" id="contact">
         <div class="container">
             <div class="section-header">
-                <h2>Contact &amp; Location</h2>
-                <p>Get in touch – we’d love to hear from you</p>
+                <h2 data-i18n="contact.title">Contact &amp; Location</h2>
+                <p data-i18n="contact.subtitle">Get in touch – we’d love to hear from you</p>
             </div>
             <div class="contact-grid">
                 <div class="contact-info">
@@ -289,15 +289,15 @@
                         <a href="#"><i class="fab fa-youtube"></i></a>
                     </div>
                     <div class="map-placeholder">
-                        <i class="fas fa-map"></i> Google Maps embed here
+                        <i class="fas fa-map"></i> <span data-i18n="contact.mapPlaceholder">Google Maps embed here</span>
                     </div>
                 </div>
                 <form class="contact-form" id="contactForm">
-                    <input type="text" id="contactName" name="name" placeholder="Your name" required />
-                    <input type="email" id="contactEmail" name="email" placeholder="Email" required />
-                    <input type="text" id="contactSubject" name="subject" placeholder="Subject (optional)" />
-                    <textarea id="contactMessage" name="message" rows="4" placeholder="Message" required></textarea>
-                    <button type="submit" class="btn btn-gold"><i class="fas fa-paper-plane"></i> Send</button>
+                    <input type="text" id="contactName" name="name" placeholder="Your name" data-i18n-placeholder="contact.yourName" required />
+                    <input type="email" id="contactEmail" name="email" placeholder="Email" data-i18n-placeholder="contact.email" required />
+                    <input type="text" id="contactSubject" name="subject" placeholder="Subject (optional)" data-i18n-placeholder="contact.subject" />
+                    <textarea id="contactMessage" name="message" rows="4" placeholder="Message" data-i18n-placeholder="contact.message" required></textarea>
+                    <button type="submit" class="btn btn-gold"><i class="fas fa-paper-plane"></i> <span data-i18n="contact.send">Send</span></button>
                 </form>
             </div>
         </div>
@@ -312,24 +312,24 @@
                         <span class="logo-icon"><i class="fas fa-seedling"></i></span>
                         Nthakayathu<span>Coop</span>
                     </a>
-                    <p style="margin:0.5rem 0;max-width:300px;">Empowering Communities, Adding Value through Soya.</p>
+                    <p style="margin:0.5rem 0;max-width:300px;" data-i18n="footer.tagline">Empowering Communities, Adding Value through Soya.</p>
                     <p style="font-size:0.85rem;color:var(--brown-light);">© 2026 Nthakayathu Cooperative</p>
                 </div>
                 <div>
-                    <h4>Quick links</h4>
-                    <a href="#about">About</a>
-                    <a href="#products">Products</a>
-                    <a href="#funding">Funding</a>
-                    <a href="#membership">Membership</a>
+                    <h4 data-i18n="footer.quickLinks">Quick links</h4>
+                    <a href="#about" data-i18n="nav.about">About</a>
+                    <a href="#products" data-i18n="nav.products">Products</a>
+                    <a href="#funding" data-i18n="nav.funding">Funding</a>
+                    <a href="#membership" data-i18n="nav.membership">Membership</a>
                 </div>
                 <div>
-                    <h4>Support</h4>
-                    <a href="#contact">Contact</a>
-                    <a href="#">FAQ</a>
-                    <a href="#" id="openPrivacyPolicyBtn">Privacy Policy</a>
+                    <h4 data-i18n="footer.support">Support</h4>
+                    <a href="#contact" data-i18n="nav.contact">Contact</a>
+                    <a href="#" data-i18n="footer.faq">FAQ</a>
+                    <a href="#" id="openPrivacyPolicyBtn" data-i18n="footer.privacyPolicy">Privacy Policy</a>
                 </div>
                 <div>
-                    <h4>Follow us</h4>
+                    <h4 data-i18n="footer.followUs">Follow us</h4>
                     <div class="social-links">
                         <a href="#"><i class="fab fa-facebook"></i></a>
                         <a href="#"><i class="fab fa-twitter"></i></a>

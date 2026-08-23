@@ -1119,16 +1119,189 @@ if (hamburger && navLinks) {
 }
 
 // ============================================================
-//  LANGUAGE TOGGLE (still demo – wire real i18n later)
+//  LANGUAGE TOGGLE (English / Chichewa) — real translation
 // ============================================================
+// Covers all static, public-facing marketing copy (nav, hero, section
+// headers, membership login form, footer, etc.) via [data-i18n] /
+// [data-i18n-placeholder] attributes in index.html. Content that comes
+// from the database (products, news, impact stories, admin panels) is
+// entered by admins directly and isn't machine-translated here — it
+// displays in whatever language it was typed in.
+const TRANSLATIONS = {
+  en: {
+    'nav.about': 'About', 'nav.products': 'Products', 'nav.funding': 'Funding',
+    'nav.transparency': 'Transparency', 'nav.membership': 'Membership', 'nav.impact': 'Impact',
+    'nav.news': 'News', 'nav.contact': 'Contact', 'nav.join': 'Join',
+
+    'hero.tag': "Malawi's Soya Value‑Addition Leader",
+    'hero.title': 'Empowering Communities, <br /><span>From Soya to Success</span>',
+    'hero.subtitle': 'We transform locally grown soya into high‑value products – oil, feed, and more – creating prosperity for farmers and rural communities.',
+    'hero.joinUs': 'Join Us', 'hero.supportUs': 'Support Us',
+    'hero.statMembers': 'Members', 'hero.statFarmers': 'Soya Farmers', 'hero.statProcessing': 'Soya Processed / Year',
+    'hero.valueChain': 'Soya Value Chain',
+
+    'about.title': 'About Us', 'about.subtitle': 'Our story, mission, and values – rooted in soya',
+    'about.missionTitle': 'Mission &amp; Vision',
+    'about.missionText': 'We empower rural communities through sustainable soya farming and value addition. Our vision is a prosperous Malawi where every soya farmer thrives.',
+    'about.value1': 'Transparency – open books, open doors',
+    'about.value2': 'Sustainability – eco‑friendly farming and processing',
+    'about.value3': 'Empowerment – training, ownership, dignity',
+    'about.history': 'Founded in 2026, Nthakayathu started with 21 united soya farmers. Today, we process over 200 tonnes of soya annually, producing premium oil, animal feed, and soya products.',
+    'about.galleryFields': 'Soya Fields', 'about.galleryOil': 'Oil Processing', 'about.galleryCommunity': 'Community',
+
+    'products.title': 'Our Soya‑Based Products', 'products.subtitle': 'Value‑added goodness from our farms',
+
+    'funding.title': 'Funding &amp; Partnerships',
+    'funding.subtitle': 'Invest in soya value addition – access our secured proposals.',
+    'funding.summaryTitle': '📄 Executive Summary',
+    'funding.summaryText': 'High‑level overview of our soya processing expansion and impact.',
+    'funding.download': 'Download',
+    'funding.proposalTitle': '🔒 Full Business Plan &amp; Proposal',
+    'funding.proposalText': 'Detailed financials, operational strategy for soya processing facility.',
+    'funding.requestAccess': 'Request Access',
+    'funding.supportTitle': 'Support Us',
+    'funding.supportText': 'Donate via mobile money or PayPal to support soya farmers.',
+    'funding.donateNow': 'Donate now',
+
+    'transparency.title': 'Transparency Dashboard',
+    'transparency.subtitle': 'How we use funds – clear, open, accountable',
+    'transparency.allocationTitle': 'Funds Allocation',
+    'transparency.processing': 'Soya Processing', 'transparency.training': 'Farmer Training',
+    'transparency.operations': 'Operations', 'transparency.admin': 'Admin',
+    'transparency.impactTitle': 'Soya Impact (2025)',
+    'transparency.impact1': '200t soya processed',
+    'transparency.impact2': '340 farmers trained in soya farming',
+    'transparency.impact3': '2 new export markets opened',
+    'transparency.impact4': '25% income increase for members',
+    'transparency.reportsTitle': 'Financial Reports',
+    'transparency.report1': 'Audited 2026 report',
+    'transparency.report2': 'Quarterly 2026 summary',
+    'transparency.report3': 'Soya value chain impact report',
+
+    'membership.title': 'Membership Portal',
+    'membership.subtitle': 'Secure login for members – access resources and reports',
+    'membership.loginTitle': 'Member Login',
+    'membership.username': 'Username', 'membership.password': 'Password',
+    'membership.signIn': 'Sign In', 'membership.forgotPassword': 'Forgot password?', 'membership.register': 'Register',
+    'membership.benefitsTitle': 'Member Benefits',
+    'membership.benefit1': 'Meeting minutes', 'membership.benefit2': 'Soya production data',
+    'membership.benefit3': 'Training materials', 'membership.benefit4': 'Forum discussions',
+
+    'impact.title': 'Impact Stories', 'impact.subtitle': 'Real lives, real change – from soya to prosperity',
+    'news.title': 'News &amp; Updates', 'news.subtitle': 'Stay informed about our milestones in soya value addition',
+
+    'contact.title': 'Contact &amp; Location', 'contact.subtitle': 'Get in touch – we’d love to hear from you',
+    'contact.mapPlaceholder': 'Google Maps embed here',
+    'contact.yourName': 'Your name', 'contact.email': 'Email', 'contact.subject': 'Subject (optional)',
+    'contact.message': 'Message', 'contact.send': 'Send',
+
+    'footer.tagline': 'Empowering Communities, Adding Value through Soya.',
+    'footer.quickLinks': 'Quick links', 'footer.support': 'Support', 'footer.faq': 'FAQ',
+    'footer.privacyPolicy': 'Privacy Policy', 'footer.followUs': 'Follow us'
+  },
+  ny: {
+    'nav.about': 'Za Ife', 'nav.products': 'Zogulitsa', 'nav.funding': 'Ndalama',
+    'nav.transparency': "Kuonekera Bwino", 'nav.membership': 'Umembala', 'nav.impact': 'Zotsatira',
+    'nav.news': 'Nkhani', 'nav.contact': 'Lumikizanani', 'nav.join': 'Lowani Nafe',
+
+    'hero.tag': 'Mtsogoleri wa Kuwonjezera Mtengo wa Soya ku Malawi',
+    'hero.title': "Kulimbikitsa Anthu M'madera, <br /><span>Kuchokera ku Soya Kupita ku Kupambana</span>",
+    'hero.subtitle': 'Timasandutsa soya yobzalidwa m’deralo kukhala zinthu zapamwamba – mafuta, chakudya cha ziweto, ndi zina – kupanga chuma kwa alimi ndi madera akumidzi.',
+    'hero.joinUs': 'Lowani Nafe', 'hero.supportUs': 'Tithandizeni',
+    'hero.statMembers': 'Mamembala', 'hero.statFarmers': 'Alimi a Soya', 'hero.statProcessing': 'Soya Yokonzedwa / Chaka',
+    'hero.valueChain': 'Njira Yonse ya Soya',
+
+    'about.title': 'Za Ife', 'about.subtitle': 'Nkhani yathu, cholinga, ndi makhalidwe athu – ozikika pa soya',
+    'about.missionTitle': 'Cholinga &amp; Masomphenya',
+    'about.missionText': 'Timalimbikitsa madera akumidzi kudzera mu ulimi wokhazikika wa soya ndi kuwonjezera mtengo. Masomphenya athu ndi Malawi yotukuka pomwe mlimi aliyense wa soya akupindula.',
+    'about.value1': 'Kuonekera bwino – mabuku otseguka, zitseko zotseguka',
+    'about.value2': 'Kukhazikika – ulimi ndi kukonza zinthu mosasokoneza chilengedwe',
+    'about.value3': 'Kulimbikitsa – maphunziro, umwini, ulemu',
+    'about.history': 'Yakhazikitsidwa mu 2026, Nthakayathu inayamba ndi alimi 21 a soya ogwirizana. Lero, timakonza matani opitilira 200 a soya pachaka, kupanga mafuta apamwamba, chakudya cha ziweto, ndi zinthu za soya.',
+    'about.galleryFields': 'Minda ya Soya', 'about.galleryOil': 'Kukonza Mafuta', 'about.galleryCommunity': 'Mudzi',
+
+    'products.title': 'Zogulitsa Zathu Zochokera ku Soya', 'products.subtitle': 'Zabwino zowonjezeredwa mtengo kuchokera kuminda yathu',
+
+    'funding.title': 'Ndalama &amp; Mgwirizano',
+    'funding.subtitle': 'Ikani ndalama pa kuwonjezera mtengo wa soya – onani mapulani athu otetezedwa.',
+    'funding.summaryTitle': '📄 Chidule cha Bizinesi',
+    'funding.summaryText': 'Chidule chachikulu cha kukula kwa kukonza soya ndi zotsatira zake.',
+    'funding.download': 'Tsitsani',
+    'funding.proposalTitle': '🔒 Pulani Yonse ya Bizinesi',
+    'funding.proposalText': 'Ndalama zonse ndi njira zogwirira ntchito za malo okonzera soya.',
+    'funding.requestAccess': 'Pemphani Chilolezo',
+    'funding.supportTitle': 'Tithandizeni',
+    'funding.supportText': 'Perekani chithandizo kudzera mu mobile money kapena PayPal kuthandiza alimi a soya.',
+    'funding.donateNow': 'Perekani Tsopano',
+
+    'transparency.title': 'Bolodi la Kuonekera Bwino',
+    'transparency.subtitle': 'Momwe timagwiritsira ntchito ndalama – momveka bwino, otseguka, oyankha mlandu',
+    'transparency.allocationTitle': 'Kugawa Ndalama',
+    'transparency.processing': 'Kukonza Soya', 'transparency.training': 'Maphunziro a Alimi',
+    'transparency.operations': 'Ntchito', 'transparency.admin': "Oyang'anira",
+    'transparency.impactTitle': 'Zotsatira za Soya (2025)',
+    'transparency.impact1': 'Matani 200 a soya okonzedwa',
+    'transparency.impact2': 'Alimi 340 ophunzitsidwa ulimi wa soya',
+    'transparency.impact3': 'Misika 2 yatsopano yogulitsira kunja yatsegulidwa',
+    'transparency.impact4': 'Ndalama za mamembala zawonjezeka ndi 25%',
+    'transparency.reportsTitle': 'Malipoti a Ndalama',
+    'transparency.report1': 'Lipoti la 2026 lowunikidwa',
+    'transparency.report2': 'Chidule cha Quarter 2026',
+    'transparency.report3': 'Lipoti la zotsatira za njira ya soya',
+
+    'membership.title': 'Malo a Mamembala',
+    'membership.subtitle': 'Kulowa mwachitetezo kwa mamembala – pezani zinthu ndi malipoti',
+    'membership.loginTitle': 'Kulowa kwa Membala',
+    'membership.username': 'Dzina lolowera', 'membership.password': 'Chinsinsi',
+    'membership.signIn': 'Lowani', 'membership.forgotPassword': 'Mwaiwala chinsinsi?', 'membership.register': 'Lembetsani',
+    'membership.benefitsTitle': 'Ubwino wa Umembala',
+    'membership.benefit1': 'Zolembedwa za misonkhano', 'membership.benefit2': 'Zambiri za kupanga soya',
+    'membership.benefit3': 'Zophunzitsira', 'membership.benefit4': 'Zokambirana pa forum',
+
+    'impact.title': 'Nkhani za Zotsatira', 'impact.subtitle': 'Miyoyo yeniyeni, kusintha kwenikweni – kuchokera ku soya kupita ku chuma',
+    'news.title': 'Nkhani &amp; Zatsopano', 'news.subtitle': 'Khalani ndi nzeru za zomwe takwaniritsa pa kuwonjezera mtengo wa soya',
+
+    'contact.title': 'Lumikizanani &amp; Malo', 'contact.subtitle': 'Lumikizanani nafe – tikufuna kumva kuchokera kwa inu',
+    'contact.mapPlaceholder': 'Mapu a Google azionekera pano',
+    'contact.yourName': 'Dzina lanu', 'contact.email': 'Imelo', 'contact.subject': 'Mutu (osafunikira)',
+    'contact.message': 'Uthenga', 'contact.send': 'Tumizani',
+
+    'footer.tagline': 'Kulimbikitsa Madera, Kuwonjezera Mtengo kudzera mu Soya.',
+    'footer.quickLinks': 'Maulalo Ofulumira', 'footer.support': 'Thandizo', 'footer.faq': 'Mafunso Ofunsidwa Kawirikawiri',
+    'footer.privacyPolicy': 'Mfundo za Chinsinsi', 'footer.followUs': 'Tsatirani Ife'
+  }
+};
+
+function getStoredLang() {
+  const stored = localStorage.getItem('nth_lang');
+  return (stored === 'ny' || stored === 'en') ? stored : 'en';
+}
+
+function applyLanguage(lang) {
+  const dict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (dict[key] !== undefined) el.setAttribute('placeholder', dict[key]);
+  });
+  document.documentElement.setAttribute('lang', lang === 'ny' ? 'ny' : 'en');
+  const label = document.getElementById('langToggleLabel');
+  if (label) label.textContent = lang === 'ny' ? 'CH' : 'EN';
+  localStorage.setItem('nth_lang', lang);
+}
+
 const langToggle = document.getElementById('langToggle');
 if (langToggle) {
-  langToggle.addEventListener('click', function () {
-    this.innerHTML = this.innerHTML.includes('EN')
-      ? '<i class="fas fa-globe"></i> CH'
-      : '<i class="fas fa-globe"></i> EN';
+  langToggle.addEventListener('click', () => {
+    applyLanguage(getStoredLang() === 'en' ? 'ny' : 'en');
   });
 }
+// Apply the saved (or default English) language as soon as the page loads,
+// so a returning visitor sees their preferred language immediately.
+applyLanguage(getStoredLang());
 
 // ============================================================
 //  HEADER SCROLL EFFECT
